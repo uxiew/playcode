@@ -28,19 +28,19 @@ export const getBootstrap = (type: string): string => {
   let bootstrap = '';
   console.log(type);
   if (type.startsWith('vue')) {
-    // bootstrap = `import { createApp as _createApp } from "vue";
-    //     const app = window.__app__ =  _createApp(__modules__["${MAIN_FILE}"].default)
-    //     app.config.errorHandler = e => console.error(e)
-    //     app.mount('#app')`;
+    bootstrap = `import { createApp } from "vue";
+        const app = window.__app__ =  createApp(__modules__["${MAIN_FILE}"].default)
+        app.config.errorHandler = e => console.error(e)
+        app.mount('#app')`;
 
-    bootstrap = `import { createApp  } from 'vue'
-    import ElementPlus from 'element-plus'
-    // ("https://unpkg.com/element-plus@2.2.19/dist/index.css")
-    // import 'element-plus/dist/index.css'
+    // bootstrap = `import { createApp  } from 'vue'
+    // import ElementPlus from 'element-plus'
+    // // ("https://unpkg.com/element-plus@2.2.19/dist/index.css")
+    // // import 'element-plus/dist/index.css'
 
-    const app = window.__app__ =  createApp(__modules__["${MAIN_FILE}"].default)
-    app.use(ElementPlus)
-    app.mount('#app')`;
+    // const app = window.__app__ =  createApp(__modules__["${MAIN_FILE}"].default)
+    // app.use(ElementPlus)
+    // app.mount('#app')`;
   }
   if (type.startsWith('react')) {
     // bootstrap = `import { createApp as _createApp } from "vue";

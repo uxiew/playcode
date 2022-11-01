@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { Hako } from 'vue-hako';
-import { screenSizes } from '~/data/devices';
+import { screenSizes } from '~/configs/devices';
 
 const selected = ref<any>(screenSizes[0].items[0]);
 

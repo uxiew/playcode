@@ -9,6 +9,8 @@ import { copyVuePlugin } from './plugins/copy-vue';
 import monacoEditorPlugin from 'vite-plugin-monaco-editor';
 const prefix = 'monaco-editor/esm/vs';
 
+const dir = path.resolve(__dirname, 'src');
+
 // https://vitejs.dev/config/
 export default defineConfig({
   build: {},
@@ -17,7 +19,7 @@ export default defineConfig({
     copyVuePlugin(),
     WindiCSS({
       scan: {
-        include: ['src/**/*.{vue,html,jsx,tsx}', 'index.html']
+        include: [`${dir}/**/*.{vue,html,jsx,tsx}`, 'index.html']
       }
     }),
     ViteComponents({
@@ -37,7 +39,7 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '~/': `${path.resolve(__dirname, 'src')}/`,
+      '~/': `${dir}/`,
       '@vue/compiler-sfc': '@vue/compiler-sfc/dist/compiler-sfc.esm-browser.js'
     }
   },

@@ -2,14 +2,13 @@ import { reactive, watch, watchEffect } from 'vue';
 // import { parse } from '@vue/compiler-sfc'
 import { createEventHook } from '@vueuse/core';
 import lz from 'lz-string';
-import { KeyList, templateList } from './data/templates';
+import { KeyList, templateList } from './templates/templates';
 import { parserTemplate } from './utils/parser';
 import { isStyleFile } from './utils/tools';
 import { pkgFetch } from './utils/pkg';
 import type { Package } from './utils/pkg';
 import { compileFile } from './logic/useCompiler';
-import { runtimes } from './data/runtimes';
-// import { templates } from '~/data/templates';
+// import { templates } from '~/configs/templates';
 // const demos = import.meta.glob('../demos/**/*.(vue|json)')
 
 export interface Orchestrator {

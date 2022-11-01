@@ -2,8 +2,8 @@
 import type { Fn, isKeyOf } from '@antfu/utils';
 import { ref, computed, reactive } from 'vue';
 import { useVModel } from '@vueuse/core';
-import { templateList } from '~/data/templates';
-import type { KeyList } from '~/data/templates';
+import { templateList } from '~/templates/templates';
+import type { KeyList } from '~/templates/templates';
 import { orchestrator, orchestratorInit } from '~/orchestrator';
 
 const emit = defineEmits(['closeDialog']);

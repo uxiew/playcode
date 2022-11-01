@@ -8,13 +8,17 @@
     "sourceMap": true,
     "resolveJsonModule": true,
     "esModuleInterop": true,
-    "lib": ["esnext", "dom"],
-    "types": [
-      "vite-plugin-pwa/client"
+    "lib": [
+      // Should target at least ES2016 in Vue 3
+      "ES2016",
+      "DOM",
+      "DOM.Iterable"
     ],
+    "types": ["vite-plugin-pwa/client"],
     "paths": {
       "~/*": ["./src/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"]
+  "exclude": ["src/templates"],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts", "src/**/*.vue"]
 }
