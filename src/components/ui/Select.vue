@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { useVModel } from '@vueuse/core'
+import { useVModel } from '@vueuse/core';
 
-const props = defineProps<{ modelValue: string }>()
-const value = useVModel(props)
+const props = defineProps<{ modelValue: string | {} }>();
+const value = useVModel(props);
 </script>
 
 <template>
@@ -21,6 +21,7 @@ const value = useVModel(props)
         <slot :value="value" />
         <carbon-chevron-down />
       </ListboxButton>
+
       <ListboxOptions
         position="absolute top-5 right-0"
         bg="dark:dark-900 light-300"

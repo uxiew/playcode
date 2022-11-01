@@ -3,33 +3,10 @@ import { until, createEventHook, tryOnUnmounted } from '@vueuse/core';
 
 import darktheme from 'theme-vitesse/themes/vitesse-dark.json';
 import lightTheme from 'theme-vitesse/themes/vitesse-light.json';
-// for Monaco Editor
-import 'monaco-editor/esm/vs/editor/editor.all.js';
-import 'monaco-editor/esm/vs/editor/standalone/browser/accessibilityHelp/accessibilityHelp.js';
-import 'monaco-editor/esm/vs/basic-languages/monaco.contribution';
-
-import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import type { editor as Editor } from 'monaco-editor';
-
 import { editorPlugins } from '~/monaco/plugins/editor';
 import setupMonaco from '~/monaco';
 import { isDark } from '~/logic/dark';
-
-// 编辑器设置
-const monacoOptions: Editor.IStandaloneEditorConstructionOptions = {
-  wordWrap: 'on',
-  fontSize: 14,
-  tabSize: 2,
-  insertSpaces: true,
-  autoClosingQuotes: 'always',
-  detectIndentation: false,
-  folding: false,
-  automaticLayout: true,
-  theme: 'vitesse-dark',
-  minimap: {
-    enabled: false
-  }
-};
 
 export function useMonaco(target: Ref, options: any) {
   const changeEventHook = createEventHook<string>();
@@ -42,7 +19,7 @@ export function useMonaco(target: Ref, options: any) {
   };
 
   const init = async () => {
-    // const { monaco } = await setupMonaco();
+    const { monaco } = await setupMonaco();
     // @ts-expect-error
     monaco.editor.defineTheme('vitesse-dark', darktheme);
     // @ts-expect-error
@@ -64,12 +41,23 @@ export function useMonaco(target: Ref, options: any) {
 
         const model = monaco.editor.createModel(
           options.code,
-          options.language
-          // monaco.Uri.parse(`file:///root/${Date.now()}.${extension()}`)
+          options.language,
+          monaco.Uri.parse(`file:///root/${Date.now()}.${extension()}`)
         );
         editor = monaco.editor.create(el, {
-          ...monacoOptions,
-          model
+          model,
+          wordWrap: 'on',
+          fontSize: 14,
+          tabSize: 2,
+          insertSpaces: true,
+          autoClosingQuotes: 'always',
+          detectIndentation: false,
+          folding: false,
+          automaticLayout: true,
+          theme: 'vitesse-dark',
+          minimap: {
+            enabled: false
+          }
         });
 
         isSetup.value = true;

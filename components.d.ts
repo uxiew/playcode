@@ -4,6 +4,7 @@
 declare module 'vue' {
   export interface GlobalComponents {
     Console: typeof import('./src/components/playground/Console.vue')['default']
+    DeviceEmulation: typeof import('./src/components/playground/DeviceEmulation.vue')['default']
     Editor: typeof import('./src/components/playground/Editor.vue')['default']
     Message: typeof import('./src/components/playground/Message.vue')['default']
     Playground: typeof import('./src/components/playground/Playground.vue')['default']
@@ -19,6 +20,8 @@ declare module 'vue' {
     Settings: typeof import('./src/components/settings/Settings.vue')['default']
     SettingsTab: typeof import('./src/components/settings/SettingsTab.vue')['default']
     WindiCSSSettings: typeof import('./src/components/settings/WindiCSSSettings.vue')['default']
+    TemplatePanel: typeof import('./src/components/templates/TemplatePanel.vue')['default']
+    Templates: typeof import('./src/components/templates/Templates.vue')['default']
     Button: typeof import('./src/components/ui/Button.vue')['default']
     Container: typeof import('./src/components/ui/Container.vue')['default']
     Navigation: typeof import('./src/components/ui/Navigation.vue')['default']

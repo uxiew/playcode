@@ -1,5 +1,9 @@
 <script setup lang="ts">
-defineProps<{ title: string; noOverflow?: boolean; noRounding?: boolean }>()
+import { useSlots } from 'vue';
+
+defineProps<{ title?: string; noOverflow?: boolean; noRounding?: boolean }>();
+
+const slots = useSlots();
 </script>
 
 <template>
@@ -18,7 +22,7 @@ defineProps<{ title: string; noOverflow?: boolean; noRounding?: boolean }>()
       bg="light-500 dark:dark-800"
       border="b-1 dark:dark-400 light-900"
       p="l-2"
-      h="8"
+      :h="title || slots.controls ? 8 : 0"
       :class="noRounding ? '' : 'rounded-t-md'"
     >
       <div flex="1">

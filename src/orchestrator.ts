@@ -1,83 +1,113 @@
-import { reactive, watch, watchEffect } from 'vue'
+import { reactive, watch, watchEffect } from 'vue';
 // import { parse } from '@vue/compiler-sfc'
-import { createEventHook } from '@vueuse/core'
-import lz from 'lz-string'
-import { compileFile } from './compiler/sfcCompiler'
+import { createEventHook } from '@vueuse/core';
+import lz from 'lz-string';
+import { KeyList, templateList } from './data/templates';
+import { parserTemplate } from './utils/parser';
+import { isStyleFile } from './utils/tools';
+import { pkgFetch } from './utils/pkg';
+import type { Package } from './utils/pkg';
+import { compileFile } from './logic/useCompiler';
+import { runtimes } from './data/runtimes';
+// import { templates } from '~/data/templates';
 // const demos = import.meta.glob('../demos/**/*.(vue|json)')
 
-const shouldUpdateContent = createEventHook()
+export interface Orchestrator {
+  // 项目类型 vue|react|angular
+  type: KeyList;
+  // 文件
+  files: {
+    [key: string]: OrchestratorFile;
+  };
+  // 依赖
+  packages: (Package | never)[];
+  // 当前文件名
+  activeFilename: string;
+  // 错误
+  errors: (string | Error)[];
+  // 运行时错误
+  runtimeErrors: (string | Error)[];
 
-export interface OrchestratorPackage {
-  name: string
-  description?: string
-  version?: string
-  url: string
-  source?: string
+  // 当前文件
+  readonly activeFile: OrchestratorFile | undefined;
+  // 导入依赖图
+  readonly importMap: string;
 }
 
+const shouldUpdateContent = createEventHook();
+
 export class OrchestratorFile {
-  filename: string
-  template: string
-  script: string
-  style: string
+  filename: string;
+  template: string;
+  script: string;
+  style: string;
 
   compiled = {
     js: '',
     css: '',
     ssr: '',
-  }
+    html: ''
+  };
 
-  constructor(filename: string, template: string | undefined, script: string | undefined, style?: string) {
-    this.filename = filename
-    this.template = template || ''
-    this.script = script || ''
-    this.style = style || ''
+  constructor(
+    filename: string,
+    script: string | undefined,
+    template?: string | undefined,
+    style?: string
+  ) {
+    this.filename = filename;
+    this.template = template || '';
+    this.script = script || '';
+    this.style = style || '';
   }
 
   get code() {
-    return `
-      <script setup>
+    if (this.filename.endsWith('.vue')) {
+      return `<script setup>
         ${this.script}
       </script>
       <template>
         ${this.template}
       </template>
-      `
+      <style scoped>
+        ${this.style}
+      </style>`;
+    }
+    if (this.filename.endsWith('.svelte')) {
+      return `<script>
+        ${this.script}
+      </script>
+      ${this.template}
+      <style>
+        ${this.style}
+      </style>`;
+    }
+    if (isStyleFile(this.filename)) {
+      return this.style;
+    }
+    return this.script;
   }
-}
-
-export interface Orchestrator {
-  files: {
-    [key: string]: OrchestratorFile
-  }
-  packages: OrchestratorPackage[]
-  activeFilename: string
-  errors: (string | Error)[]
-  runtimeErrors: (string | Error)[]
-
-  readonly activeFile: OrchestratorFile | undefined
-  readonly importMap: string
 }
 
 /**
  * Main app orchestrator, handles all the files, import maps, and errors
  */
 export const orchestrator: Orchestrator = reactive({
-  files: {
-    'App.vue': new OrchestratorFile('App.vue', '', ''),
-  },
+  type: 'typescript',
+  files: {},
   packages: [],
-  activeFilename: 'App.vue',
+  activeFilename: 'app.ts',
   errors: [],
   runtimeErrors: [],
 
   get activeFile() {
     // @ts-ignore
-    return orchestrator.files[this.activeFilename]
+    return orchestrator.files[this.activeFilename];
   },
 
   get importMap() {
-    const imports = orchestrator.packages.map(({ name, url }) => `"${name}": "${url}"`)
+    const imports =
+      orchestrator.packages.map(({ name, url }) => `"${name}": "${url}"`) || [];
 
     return `
       {
@@ -85,35 +115,48 @@ export const orchestrator: Orchestrator = reactive({
           ${imports.join(',\n')}
         }
       }
-    `
-  },
-})
+    `;
+  }
+});
 
 /**
  * Setup Watchers
  */
 
 watchEffect(() => {
-  if (orchestrator.activeFile)
-    compileFile(orchestrator.activeFile)
-})
+  if (orchestrator.activeFile) compileFile(orchestrator.activeFile);
+});
 
-watch(() => orchestrator.activeFilename, () => {
-  shouldUpdateContent.trigger(null)
-})
+watch(
+  () => orchestrator.activeFilename,
+  () => {
+    shouldUpdateContent.trigger(null);
+  }
+);
 
+/**
+ * 导出当前状态可分享
+ */
 export function exportState() {
-  const files = Object.entries(orchestrator.files).reduce((acc, [name, { template, script }]) => {
-    acc[name] = { template, script }
-    return acc
-  }, {})
+  const files = Object.entries(orchestrator.files).reduce(
+    (acc, [name, { template, script }]) => {
+      acc[name] = { template, script };
+      return acc;
+    },
+    {}
+  );
 
-  return lz.compressToEncodedURIComponent(JSON.stringify({
-    packages: orchestrator.packages,
-    files,
-  }))
+  // const { files, packages } = JSON.parse(
+  //   lz.decompressFromEncodedURIComponent(location.hash.slice(1))
+  // );
+
+  return lz.compressToEncodedURIComponent(
+    JSON.stringify({
+      packages: orchestrator.packages,
+      files
+    })
+  );
 }
-
 
 /**
  * Add a file to the orchestrator
@@ -123,14 +166,14 @@ export function exportState() {
 export function addFile(file: OrchestratorFile) {
   orchestrator.files = {
     ...orchestrator.files,
-    [file.filename]: file,
-  }
+    [file.filename]: file
+  };
 
-  compileFile(orchestrator.files[file.filename])
+  compileFile(orchestrator.files[file.filename]);
 }
 
 export function setActiveFile(name: string) {
-  orchestrator.activeFilename = name
+  orchestrator.activeFilename = name;
 }
 
 /**
@@ -139,15 +182,15 @@ export function setActiveFile(name: string) {
  * @param name Name of file to remove
  */
 export function removeFile(name: string) {
-  delete orchestrator.files[name]
-  setTimeout(() => setActiveFile('App.vue'), 0)
+  delete orchestrator.files[name];
+  setTimeout(() => setActiveFile('App.vue'), 0);
 }
 
 /**
  * Remove all files from the orchestrator
  */
 export function removeAllFiles() {
-  orchestrator.files = {}
+  orchestrator.files = {};
 }
 
 /**
@@ -193,11 +236,11 @@ export function removeAllFiles() {
 //   setActiveFile('App.vue')
 //   shouldUpdateContent.trigger(null)
 // }
-
-export const onShouldUpdateContent = shouldUpdateContent.on
-
 // openDemo('default')
 
+export const onShouldUpdateContent = shouldUpdateContent.on;
+
+/*
 // App.vue
 const appTemplate = `
 <div
@@ -209,13 +252,13 @@ const appTemplate = `
   <Coordinate label="X" :value="x" />
   <Coordinate label="Y" :value="y" />
 </div>
-`
+`;
 const appScript = `
 import { useMouse } from '@vueuse/core'
 import Coordinate from './Coordinate.vue'
 
 const { x, y } = useMouse()
-`
+`;
 
 // Coordinate.vue
 const coordinateTemplate = `
@@ -230,64 +273,59 @@ const coordinateTemplate = `
   <span text="4xl">{{ value }}</span>
   <span text="sm dark:light-900 dark:opacity-50" m="t-2">Mouse {{ label }}</span>
 </div>
-`
+`;
 
 const coordinateScript = `
 defineProps({
   label: String,
   value: Number,
 })
-`
+`;
 
 const initialPackages = [
   {
     name: 'vue-demi',
     source: 'unpkg',
-    description: 'Vue Demi (half in French) is a developing utility allows you to write Universal Vue Libraries for Vue 2 & 3',
-    url: 'https://unpkg.com/vue-demi/lib/index.mjs',
+    description:
+      'Vue Demi (half in French) is a developing utility allows you to write Universal Vue Libraries for Vue 2 & 3',
+    url: 'https://unpkg.com/vue-demi@0.13.11/lib/index.mjs',
+    version: '0.13.11'
   },
   {
     name: '@vueuse/shared',
     source: 'unpkg',
     description: 'Shared VueUse utilities.',
     url: 'https://unpkg.com/@vueuse/shared@9.0.0/index.mjs',
+    version: '9.0.0'
   },
   {
     name: '@vueuse/core',
     source: 'unpkg',
     description: 'Collection of essential Vue Composition Utilities',
     url: 'https://unpkg.com/@vueuse/core@9.0.0/index.mjs',
-  },
-]
-
-function loadInitialState() {
-  removeAllFiles()
-
-  if (location.hash.slice(1)) {
-    const { files, packages } = JSON.parse(lz.decompressFromEncodedURIComponent(location.hash.slice(1)))
-
-    console.log(files, packages)
-
-    if (files && packages) {
-      orchestrator.packages = packages
-
-      for (const f in files) {
-        console.log(f)
-        addFile(new OrchestratorFile(f, files[f].template, files[f].script))
-      }
-      setActiveFile('App.vue')
-      shouldUpdateContent.trigger(null)
-    }
+    version: '9.0.0'
   }
-  else {
-    orchestrator.packages = initialPackages
-    addFile(new OrchestratorFile('App.vue', appTemplate.trim(), appScript.trim()))
-    addFile(new OrchestratorFile('Coordinate.vue', coordinateTemplate.trim(), coordinateScript.trim()))
-    setActiveFile('App.vue')
-    shouldUpdateContent.trigger(null)
+];
+
+*/
+// 初始化
+export function orchestratorInit(type: KeyList = 'typescript') {
+  removeAllFiles();
+  const { files, packages } = templateList[type];
+  orchestrator.type = type;
+
+  // @ts-ignore
+  orchestrator.packages = pkgFetch(packages);
+
+  for (const { name, active, value, extension } of files) {
+    const result = parserTemplate(name, extension, value);
+    addFile(new OrchestratorFile(...result));
+    active && setActiveFile(result[0]);
   }
+
+  shouldUpdateContent.trigger(null);
 }
 
 setTimeout(() => {
-  loadInitialState()
-}, 0)
+  orchestratorInit();
+}, 0);
