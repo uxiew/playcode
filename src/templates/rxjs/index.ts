@@ -1,8 +1,8 @@
+import { Template } from '..';
 import script from './script.js?raw';
 
-export default {
-  previewClosed: !0,
-  title: 'RxJS Playground',
+export default <Template>{
+  title: 'RxJS',
   icon: 'rxjs',
   packages: [
     {
@@ -12,6 +12,7 @@ export default {
       source: 'jsdelivr'
     }
   ],
+  configs: {},
   files: [
     {
       name: 'script',

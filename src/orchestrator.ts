@@ -1,23 +1,28 @@
-import { reactive, watch, watchEffect } from 'vue';
-// import { parse } from '@vue/compiler-sfc'
+import { reactive, watch } from 'vue';
 import { createEventHook } from '@vueuse/core';
 import lz from 'lz-string';
-import { KeyList, templateList } from './templates/templates';
-import { parserTemplate } from './utils/parser';
-import { isStyleFile } from './utils/tools';
+import { templateList } from './templates';
+import { isStyleFile, isTemplateFile } from './utils/tools';
 import { pkgFetch } from './utils/pkg';
+import templateHtml from '~/templates/template.html?raw';
+import { setSettings, settings } from '~/configs/settings';
+import {
+  state as previewState,
+  updatePreview
+} from '~/logic/usePreview/preview';
+import { parserTemplate, compileFile } from '~/logic/useCompiler';
+
 import type { Package } from './utils/pkg';
-import { compileFile } from './logic/useCompiler';
-// import { templates } from '~/configs/templates';
-// const demos = import.meta.glob('../demos/**/*.(vue|json)')
+import type { KeyList } from './templates';
+import type { Settings } from '~/configs/settings';
+
+export type sourceType = 'template' | 'script' | 'style';
 
 export interface Orchestrator {
   // 项目类型 vue|react|angular
   type: KeyList;
   // 文件
-  files: {
-    [key: string]: OrchestratorFile;
-  };
+  files: Record<string, OrchestratorFile>;
   // 依赖
   packages: (Package | never)[];
   // 当前文件名
@@ -26,6 +31,7 @@ export interface Orchestrator {
   errors: (string | Error)[];
   // 运行时错误
   runtimeErrors: (string | Error)[];
+  configs: Settings; // 项目当前的一些配置
 
   // 当前文件
   readonly activeFile: OrchestratorFile | undefined;
@@ -37,9 +43,12 @@ const shouldUpdateContent = createEventHook();
 
 export class OrchestratorFile {
   filename: string;
+  ext: string; // 扩展名
   template: string;
   script: string;
   style: string;
+  // 关闭该文件
+  closed: boolean = false;
 
   compiled = {
     js: '',
@@ -51,12 +60,14 @@ export class OrchestratorFile {
   constructor(
     filename: string,
     script: string | undefined,
+    ext?: string | undefined,
     template?: string | undefined,
     style?: string
   ) {
     this.filename = filename;
-    this.template = template || '';
     this.script = script || '';
+    this.ext = ext || '';
+    this.template = template || '';
     this.style = style || '';
   }
 
@@ -84,6 +95,9 @@ export class OrchestratorFile {
     if (isStyleFile(this.filename)) {
       return this.style;
     }
+    if (isTemplateFile(this.filename)) {
+      return this.template;
+    }
     return this.script;
   }
 }
@@ -92,12 +106,13 @@ export class OrchestratorFile {
  * Main app orchestrator, handles all the files, import maps, and errors
  */
 export const orchestrator: Orchestrator = reactive({
-  type: 'typescript',
+  type: 'javascript',
   files: {},
   packages: [],
-  activeFilename: 'app.ts',
+  activeFilename: 'main.js',
   errors: [],
   runtimeErrors: [],
+  configs: {},
 
   get activeFile() {
     // @ts-ignore
@@ -119,17 +134,21 @@ export const orchestrator: Orchestrator = reactive({
 });
 
 /**
- * Setup Watchers
+ * Setup Watcher
  */
-
-watchEffect(() => {
-  if (orchestrator.activeFile) compileFile(orchestrator.activeFile);
-});
-
 watch(
-  () => orchestrator.activeFilename,
-  () => {
-    shouldUpdateContent.trigger(null);
+  () => [
+    orchestrator.activeFilename,
+    orchestrator.files[orchestrator.activeFilename]?.code
+  ],
+  ([name1, content1], [name2, content2]) => {
+    if (content1 === undefined) return;
+    if (name1 !== name2) {
+      shouldUpdateContent.trigger(null);
+    }
+    if (name1 === name2 && content1 !== content2) {
+      updatePreview();
+    }
   }
 );
 
@@ -168,7 +187,7 @@ export function addFile(file: OrchestratorFile) {
     [file.filename]: file
   };
 
-  compileFile(orchestrator.files[file.filename]);
+  return compileFile(orchestrator.files[file.filename]);
 }
 
 export function setActiveFile(name: string) {
@@ -178,153 +197,73 @@ export function setActiveFile(name: string) {
 /**
  * Remove a file from the orchestrator
  *
- * @param name Name of file to remove
+ * @param name  Name of file to remove
  */
 export function removeFile(name: string) {
+  const filesArr = Object.values(orchestrator.files);
   delete orchestrator.files[name];
-  setTimeout(() => setActiveFile('App.vue'), 0);
+
+  let nextFileIndex = 0;
+  // 重洗顺序
+  for (let i = 0; i < filesArr.length; i++) {
+    if (filesArr[i].filename === name) {
+      nextFileIndex = i + 1 === filesArr.length ? i - 1 : i + 1;
+      break;
+    }
+  }
+
+  // 激活文件
+  setTimeout(() => {
+    setActiveFile(filesArr[nextFileIndex].filename);
+  }, 0);
 }
 
 /**
  * Remove all files from the orchestrator
  */
-export function removeAllFiles() {
+export function resetInit() {
+  previewState.ready = false;
   orchestrator.files = {};
 }
 
-/**
- * Load a demo folder
- *
- * @param name Name of demo to open
- */
-// export async function openDemo(name: string) {
-//   // Get all modules from demo
-//   const modules = (await Promise.all(Object.entries(demos)
-//     .filter(([path]) => path.split('demos/')[1].split('/')[0] === name)
-//     .filter(([path]) => path.includes('.vue') || path.includes('.json'))
-//     .map(async([path]) => ([path, (await import(`${path}?raw`)).default]))))
-
-//   console.log(modules)
-
-//   const packages = (await Promise.all(Object.entries(demos)
-//     .filter(([path]) => path.split('demos/')[1].split('/')[0] === name)
-//     .filter(([path]) => path.includes('.json'))
-//     .map(async([path, imp]) => ([path, (await imp()).default]))))
-//     .find(([path]) => path.includes('packages.json'))
-
-//   if (packages)
-//     orchestrator.packages = packages[1]
-
-//   removeAllFiles()
-
-//   // Load Vue Files
-//   modules
-//     .filter(([path]) => path.includes('.vue'))
-//     .map(([path, content]) => {
-//       const { descriptor: { template, scriptSetup } } = parse(content)
-//       return {
-//         filename: path.split(`${name}/`)[1],
-//         script: scriptSetup?.content.trim(),
-//         template: template?.content.trim(),
-//       }
-//     })
-//     .forEach(({ filename, script, template }) => {
-//       addFile(new OrchestratorFile(filename, template, script))
-//     })
-
-//   setActiveFile('App.vue')
-//   shouldUpdateContent.trigger(null)
-// }
-// openDemo('default')
-
 export const onShouldUpdateContent = shouldUpdateContent.on;
 
-/*
-// App.vue
-const appTemplate = `
-<div
-  grid="~ flow-col gap-4"
-  place="content-center items-center"
-  h="screen"
-  font="mono"
-  >
-  <Coordinate label="X" :value="x" />
-  <Coordinate label="Y" :value="y" />
-</div>
-`;
-const appScript = `
-import { useMouse } from '@vueuse/core'
-import Coordinate from './Coordinate.vue'
-
-const { x, y } = useMouse()
-`;
-
-// Coordinate.vue
-const coordinateTemplate = `
-<div
-  font="mono"
-  bg="light-500 dark:dark-500"
-  flex="~ col"
-  text="center"
-  p="2"
-  border="rounded"
->
-  <span text="4xl">{{ value }}</span>
-  <span text="sm dark:light-900 dark:opacity-50" m="t-2">Mouse {{ label }}</span>
-</div>
-`;
-
-const coordinateScript = `
-defineProps({
-  label: String,
-  value: Number,
-})
-`;
-
-const initialPackages = [
-  {
-    name: 'vue-demi',
-    source: 'unpkg',
-    description:
-      'Vue Demi (half in French) is a developing utility allows you to write Universal Vue Libraries for Vue 2 & 3',
-    url: 'https://unpkg.com/vue-demi@0.13.11/lib/index.mjs',
-    version: '0.13.11'
-  },
-  {
-    name: '@vueuse/shared',
-    source: 'unpkg',
-    description: 'Shared VueUse utilities.',
-    url: 'https://unpkg.com/@vueuse/shared@9.0.0/index.mjs',
-    version: '9.0.0'
-  },
-  {
-    name: '@vueuse/core',
-    source: 'unpkg',
-    description: 'Collection of essential Vue Composition Utilities',
-    url: 'https://unpkg.com/@vueuse/core@9.0.0/index.mjs',
-    version: '9.0.0'
+function mockHtml(type: KeyList) {
+  const { files } = orchestrator;
+  if (!files['index.html']) {
+    addFile(new OrchestratorFile('index.html', '', '.html', templateHtml, ''));
+    orchestrator.files['index.html'].closed = true;
   }
-];
+}
 
-*/
-// 初始化
-export function orchestratorInit(type: KeyList = 'typescript') {
-  removeAllFiles();
-  const { files, packages } = templateList[type];
+// ---初始化--
+export function orchestratorInit(type: KeyList = 'javascript') {
+  resetInit();
+  const { files, packages, configs } = templateList[type];
   orchestrator.type = type;
 
+  // settings
+  setSettings(configs);
   // @ts-ignore
   orchestrator.packages = pkgFetch(packages);
 
-  for (const { name, active, value, extension } of files) {
+  let num = 0;
+  files.forEach(({ name, active, value, extension }, i) => {
     const result = parserTemplate(name, extension, value);
-    addFile(new OrchestratorFile(...result));
     active && setActiveFile(result[0]);
-  }
+
+    // 编译完成 ready = true
+    addFile(new OrchestratorFile(...result)).then(() => {
+      num++;
+      if (num === files.length) previewState.ready = true;
+    });
+  });
+
+  if (settings.preview) mockHtml(type);
 
   shouldUpdateContent.trigger(null);
 }
 
 setTimeout(() => {
-  orchestratorInit();
+  orchestratorInit('javascript');
 }, 0);

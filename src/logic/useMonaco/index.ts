@@ -3,12 +3,7 @@ import { until, createEventHook, tryOnUnmounted } from '@vueuse/core';
 
 import darktheme from 'theme-vitesse/themes/vitesse-dark.json';
 import lightTheme from 'theme-vitesse/themes/vitesse-light.json';
-// for Monaco Editor
-import 'monaco-editor/esm/vs/editor/editor.all.js';
-import 'monaco-editor/esm/vs/editor/standalone/browser/accessibilityHelp/accessibilityHelp.js';
-import 'monaco-editor/esm/vs/basic-languages/monaco.contribution';
 
-import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import type { editor as Editor } from 'monaco-editor';
 
 import { editorPlugins } from '~/monaco/plugins/editor';
@@ -42,7 +37,7 @@ export function useMonaco(target: Ref, options: any) {
   };
 
   const init = async () => {
-    // const { monaco } = await setupMonaco();
+    const { monaco } = await setupMonaco();
     // @ts-expect-error
     monaco.editor.defineTheme('vitesse-dark', darktheme);
     // @ts-expect-error
@@ -60,12 +55,13 @@ export function useMonaco(target: Ref, options: any) {
           else if (options.language === 'javascript') return 'js';
           else if (options.language === 'html') return 'html';
           else if (options.language === 'css') return 'scss';
+          else if (options.language === 'json') return 'json';
         };
 
         const model = monaco.editor.createModel(
           options.code,
-          options.language
-          // monaco.Uri.parse(`file:///root/${Date.now()}.${extension()}`)
+          options.language,
+          monaco.Uri.parse(`file:///root/${Date.now()}.${extension()}`)
         );
         editor = monaco.editor.create(el, {
           ...monacoOptions,

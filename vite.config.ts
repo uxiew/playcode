@@ -6,9 +6,6 @@ import ViteComponents, { HeadlessUiResolver } from 'vite-plugin-components';
 import Icons, { ViteIconsResolver } from 'vite-plugin-icons';
 import { copyVuePlugin } from './plugins/copy-vue';
 
-import monacoEditorPlugin from 'vite-plugin-monaco-editor';
-const prefix = 'monaco-editor/esm/vs';
-
 const dir = path.resolve(__dirname, 'src');
 
 // https://vitejs.dev/config/
@@ -31,11 +28,10 @@ export default defineConfig({
         HeadlessUiResolver()
       ]
     }),
-    Icons(),
+    Icons()
     // VitePWA({
     //   base: '/',
     // }),
-    monacoEditorPlugin({ globalAPI: true })
   ],
   resolve: {
     alias: {

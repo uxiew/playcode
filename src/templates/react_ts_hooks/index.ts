@@ -1,19 +1,31 @@
+import { Template } from '..';
 import app from './App.tsx?raw';
 import main from './main.tsx?raw';
 import style from './style.css?inline';
 
-export default {
-  title: 'React TypeScript Playground Hooks',
+export default <Template>{
+  title: 'React TypeScript Hooks',
   icon: 'react',
   packages: [
     {
       name: 'react',
       version: '18.2.0',
-      path: '/react.development.js'
+      source: 'esm'
+    },
+    {
+      name: 'react/jsx-runtime',
+      version: '18.2.0',
+      url: 'https://esm.sh/react/jsx-runtime'
+    },
+    {
+      name: 'react-dom/client',
+      version: '18.2.0',
+      url: 'https://esm.sh/react-dom/client'
     },
     {
       name: 'react-dom',
-      version: '18.0.0'
+      version: '18.2.0',
+      source: 'esm'
     }
   ],
   files: [
@@ -32,7 +44,7 @@ export default {
       extension: '.css'
     },
     {
-      name: 'index',
+      name: 'main',
       value: main,
       active: !1,
       closed: !1,

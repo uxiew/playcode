@@ -3,7 +3,8 @@ import main from './main.jsx?raw';
 import style from './style.css?inline';
 
 export default {
-  title: 'React MUI Playground',
+  title: 'React MUI',
+  homepage: 'https://mui.com/zh/',
   icon: 'react_mui',
   packages: [
     {
@@ -36,18 +37,18 @@ export default {
       extension: '.jsx'
     },
     {
-      name: 'style',
-      value: style,
-      active: !1,
-      closed: !0,
-      extension: '.css'
-    },
-    {
       name: 'App',
       value: app,
       active: !0,
       closed: !1,
       extension: '.jsx'
+    },
+    {
+      name: 'style',
+      value: style,
+      active: !1,
+      closed: !0,
+      extension: '.css'
     },
     {
       name: 'package',

@@ -4,7 +4,8 @@ import main from './main.js?raw';
 import style from './style.css?inline';
 
 export default {
-  title: 'Svelte Playground',
+  title: 'Svelte',
+  homepage: 'http://svelte',
   icon: 'svelte',
   packages: [
     {

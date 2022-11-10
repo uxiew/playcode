@@ -1,5 +1,5 @@
 import type { Package } from '~/utils/pkg';
-import type { KeyList } from '../templates/templates';
+import type { KeyList } from '../templates';
 
 interface RunTime {
   [k: string]: Package[];

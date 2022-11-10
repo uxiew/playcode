@@ -14,11 +14,7 @@ import {
   orchestrator as store,
   OrchestratorFile as File
 } from '../orchestrator';
-import { MAIN_FILE } from './vueCompiler';
-
-export function compileModulesForPreview() {
-  return processFile(store.files[MAIN_FILE]).reverse();
-}
+import { extensions } from '~/configs/settings';
 
 const modulesKey = '__modules__';
 const exportKey = '__export__';
@@ -30,9 +26,7 @@ export function processFile(file: File, seen = new Set<File>()) {
   if (seen.has(file)) return [];
 
   seen.add(file);
-
-  const { js, css } = file.compiled;
-
+  const { js } = file.compiled;
   const s = new MagicString(js);
 
   const ast = babelParse(js, {
@@ -40,8 +34,11 @@ export function processFile(file: File, seen = new Set<File>()) {
     sourceType: 'module'
   }).program.body;
 
-  // TODO 分析倒入的其他文件  `import { demo } from './demo';`
-  console.log('file.ast;', ast);
+  console.log(
+    '--processFile---' + file.filename + "'s AST：",
+    file.compiled,
+    ast
+  );
 
   const idToImportMap = new Map<string, string>();
   const declaredConst = new Set<string>();
@@ -49,9 +46,19 @@ export function processFile(file: File, seen = new Set<File>()) {
   const importToIdMap = new Map<string, string>();
 
   function defineImport(node: Node, source: string) {
-    const filename = source.replace(/^\.\/+/, '');
-    if (!(filename in store.files))
-      throw new Error(`File "${filename}" does not exist.`);
+    let filename = source.replace(/^\.\/+/, '');
+    let flag = 1;
+
+    if (!(filename in store.files)) {
+      for (const ext of extensions) {
+        if (store.files[filename + ext]) {
+          filename = filename + ext;
+          flag = 0;
+          break;
+        }
+      }
+      if (flag) throw new Error(`File "${filename}" does not exist.`);
+    }
 
     if (importedFiles.has(filename)) return importToIdMap.get(filename)!;
 
@@ -208,13 +215,10 @@ export function processFile(file: File, seen = new Set<File>()) {
     }
   });
 
-  // append CSS injection code
-  if (css) s.append(`\nwindow.__css__ += ${JSON.stringify(css)}`);
-
-  const processed = [s.toString()];
+  const processed = [`${file.filename}:_:${s.toString()}`];
   if (importedFiles.size) {
     for (const imported of importedFiles)
-      processed.push(...processFile(store.files[imported], seen));
+      processed.unshift(...processFile(store.files[imported], seen));
   }
 
   // return a list of files to further process

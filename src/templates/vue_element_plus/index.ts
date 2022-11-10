@@ -1,10 +1,12 @@
+import { Template } from '..';
 import app from './App.vue?raw';
 import main from './main.ts?raw';
 import style from './style.css?inline';
 
-export default {
-  title: 'Element Plus Playground',
+export default <Template>{
+  title: 'Element Plus',
   icon: 'vue_element',
+  configs: {},
   packages: [
     {
       name: 'vue',
@@ -18,26 +20,22 @@ export default {
       source: 'jsdelivr'
     },
     {
-      pkg: 'element-plus/',
+      name: 'element-plus/',
       version: '2.2.19',
-      path: '/',
-      source: 'jsdelivr'
+      path: '/'
     },
     {
       name: '@vue/shared',
-      path: '/dist/shared.esm-bundler.js',
-      source: 'jsdelivr'
+      path: '/dist/shared.esm-bundler.js'
     },
     {
       name: '@element-plus/icons-vue',
-      path: '/dist/index.min.mjs',
-      source: 'jsdelivr'
+      path: '/dist/index.min.mjs'
     },
     {
       name: '@popperjs/core',
       version: '2.11.5',
-      path: '/@popperjs/core@2.11.5',
-      source: 'jsdelivr'
+      path: '/@popperjs/core@2.11.5'
     }
   ],
   files: [
@@ -59,14 +57,6 @@ export default {
       active: !1,
       closed: !0,
       extension: '.css'
-    },
-    {
-      name: 'package',
-      extension: '.json',
-      value:
-        '{\n  "dependencies": {\n    "vue": "3.2.33",\n    "element-plus": "2.1.11",\n    "@popperjs/core": "2.11.5"\n  }\n}',
-      active: !1,
-      closed: !0
     }
   ]
 };

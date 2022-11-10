@@ -1,96 +1,124 @@
 // 根据当前选择的模版自动切换到对应的编译环境
 
 // react node scss angular rust deno dart solid svelte
-
-import { compileModulesForPreview } from '~/compiler/moduleCompiler';
-import { MAIN_FILE, compileVueFile } from '~/compiler/vueCompiler';
-// import { MAIN_FILE } from '~/compiler/reactCompiler';
+import * as vueCompiler from '@vue/compiler-sfc';
+import { processFile } from '~/compiler/moduleCompiler';
+import { compileVueFile } from '~/compiler/vueCompiler';
 // import {  } from '~/compiler/styleCompiler';
-import { orchestrator as store, OrchestratorFile } from '~/orchestrator';
-import { ref } from 'vue';
-import { isStyleFile } from '~/utils/tools';
+import { babelCompile } from '~/compiler/BabelCompiler';
+import { compileStyleFile } from '~/compiler/styleCompiler';
+import { compileTemplateFile } from '~/compiler/templateCompiler';
+import { MAIN_FILE_REG } from '~/configs/settings';
+import { orchestrator as store, sourceType } from '~/orchestrator';
+import {
+  getContainerDOMId,
+  isJSXFile,
+  isScriptFile,
+  isStyleFile,
+  isTemplateFile
+} from '~/utils/tools';
 
-/**
- * 加载 全局的 css
- */
-export const loadGlobalStyles = () => {
-  const styles = [];
-  for (const filename in store.files) {
-    if (isStyleFile(filename)) styles.push(store.files[filename].compiled.css);
-  }
-  return styles.join('');
-};
+import type { OrchestratorFile } from '~/orchestrator';
 
-/**
- * 每个项目的入口文件，进行默认加载
- */
-export const getBootstrap = (type: string): string => {
-  let bootstrap = '';
-  console.log(type);
-  if (type.startsWith('vue')) {
-    bootstrap = `import { createApp } from "vue";
-        const app = window.__app__ =  createApp(__modules__["${MAIN_FILE}"].default)
-        app.config.errorHandler = e => console.error(e)
-        app.mount('#app')`;
+// 编译对应js文件并加载
+export function compileModules() {
+  let modules: Array<string> = [];
+  for (const name in store.files)
+    if (MAIN_FILE_REG.test(name)) modules = processFile(store.files[name]);
 
-    // bootstrap = `import { createApp  } from 'vue'
-    // import ElementPlus from 'element-plus'
-    // // ("https://unpkg.com/element-plus@2.2.19/dist/index.css")
-    // // import 'element-plus/dist/index.css'
-
-    // const app = window.__app__ =  createApp(__modules__["${MAIN_FILE}"].default)
-    // app.use(ElementPlus)
-    // app.mount('#app')`;
-  }
-  if (type.startsWith('react')) {
-    // bootstrap = `import { createApp as _createApp } from "vue";
-    //     const app = window.__app__ =  _createApp(__modules__["${MAIN_FILE}"].default)
-    //     app.config.errorHandler = e => console.error(e)
-    //     app.mount('#app')`;
-
-    bootstrap = `import { createApp as _createApp } from 'vue'
-    import ElementPlus from 'element-plus'
-    // import 'element-plus/dist/index.css'
- 
-    const app = window.__app__ =  _createApp(__modules__["${MAIN_FILE}"].default)
-    // app.use(ElementPlus)
-    app.mount('#app')`;
-  }
-  return bootstrap.trim();
-};
-
-// 在 templates 的 active 属性打开的文件即为入口文件
-export function useCompiler() {
-  function updateCode() {}
-
-  return {
-    bootStrapStr: ``,
-    updateCode
-  };
+  // ["demo.ts:_:const __module__ = __modules__[\"demo.ts\"] =..."]
+  return modules;
 }
 
 /**
- * 编译文件！
+ * 处理编译每个文件！
  */
-export function compileFile(file: OrchestratorFile) {
-  if (store.type.startsWith('vue')) {
-    compileVueFile(file);
-  }
-  if (store.type.startsWith('react')) {
-    compileVueFile(file);
-  }
-  if (store.type.startsWith('svelte')) {
-    compileVueFile(file);
-  }
-  if (store.type.startsWith('solid')) {
-    compileVueFile(file);
-  }
-  if (store.type === 'scss' || store.type === 'less') {
-    compileVueFile(file);
+export async function compileFile(
+  file: OrchestratorFile,
+  from?: sourceType
+): Promise<void> {
+  const { filename, script, template, style } = file;
+  if (script.trim() === template.trim() && template.trim() === style.trim())
+    return;
+
+  // 样式一般不会影响程序逻辑，比如 vue
+  if (isStyleFile(filename) || from === 'style') {
+    await compileStyleFile(file);
+    return;
   }
 
-  return compileVueFile(file);
+  if (isTemplateFile(filename)) {
+    await compileTemplateFile(file);
+    return;
+  }
+
+  if (isScriptFile(filename) || isJSXFile(filename)) {
+    await babelCompile(file);
+    return;
+  }
+
+  if (filename.endsWith('.vue')) {
+    await compileVueFile(file);
+    return;
+  }
+
+  // if (store.type.endsWith('.svelte')) compileSvelteFile(file);
+  // if (store.type.endsWith('.solid')) compileSolidFile(file);
+
+  // if (isRustFile(filename)) compileRustFile(file);
   // return compileNodeFile(file);
 }
 
-export { MAIN_FILE, compileModulesForPreview, store };
+/**
+ * 获取 挂载点 id
+ */
+export function getMountID() {
+  return getContainerDOMId(
+    (
+      store.files['main.ts'] ||
+      store.files['main.tsx'] ||
+      store.files['main.js'] ||
+      store.files['main.jsx']
+    ).script
+  );
+}
+
+/**
+ * parser file's sourcecode to three part (script,template,style)
+ */
+export function parserTemplate(
+  name: string,
+  ext: string,
+  code: string = ''
+): [
+  filename: string,
+  script: string,
+  ext: string,
+  template: string,
+  style: string
+] {
+  let filename = name + ext,
+    script = code,
+    template = '',
+    style = '';
+
+  if (ext === '.vue') {
+    const descriptor = vueCompiler.parse(script, { filename }).descriptor;
+    script =
+      descriptor.script?.content || descriptor.scriptSetup?.content || '';
+    template = descriptor.template?.content || '';
+    style = descriptor.styles[0]?.content;
+  }
+
+  if (ext === '.html') {
+    script = '';
+    template = code;
+  }
+
+  if (isStyleFile(ext)) {
+    script = '';
+    style = code;
+  }
+
+  return [filename, script, ext, template, style];
+}

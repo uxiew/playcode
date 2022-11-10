@@ -1,44 +1,22 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watchEffect, watch } from 'vue';
-import type { WatchStopHandle } from 'vue';
-// import { useElementSize, useCssVar } from '@vueuse/core'
-import srcdoc from '../template.html?raw';
-import { PreviewProxy } from '~/logic/PreviewProxy';
+import { ref, onUnmounted, watch } from 'vue';
+import { orchestrator as store } from '~/orchestrator';
 import {
-  compileModulesForPreview,
-  store,
-  getBootstrap,
-  loadGlobalStyles
-} from '~/logic/useCompiler';
-
-import { isDark } from '~/logic/dark';
-import { initImportLibsMap } from '~/utils/parser';
+  previewState,
+  initProxy,
+  getProxy,
+  prepareHTML
+} from '~/logic/usePreview';
 
 const container = ref();
-const runtimeError = ref();
-const runtimeWarning = ref();
 let sandbox: HTMLIFrameElement;
-let proxy: PreviewProxy;
-let stopUpdateWatcher: WatchStopHandle;
 
-watch([runtimeError, runtimeWarning], () => {
-  store.runtimeErrors = [runtimeError.value, runtimeWarning.value].filter(
-    (x) => x
-  );
-});
-
-// create sandbox on mount
-onMounted(createSandbox);
-// reset sandbox when import map changes
-
+// TODO reset sandbox when import map changes
 watch(
   () => store.importMap,
   (importMap, prev) => {
     if (!importMap) {
-      if (prev) {
-        // import-map.json deleted
-        createSandbox();
-      }
+      if (prev) createSandbox(); // import-map.json deleted
       return;
     }
     try {
@@ -53,23 +31,33 @@ watch(
             'Specifying it in the import map has no effect.'
         ];
       }
-      createSandbox();
+      // createSandbox();
     } catch (e) {
       store.errors = [e];
     }
   }
 );
 
+// create sandbox on compiled for run
+watch(
+  () => previewState.ready,
+  (ready) => {
+    if (ready) {
+      createSandbox();
+    } else {
+      previewState.loaded = false;
+    }
+  }
+);
+
 onUnmounted(() => {
-  proxy.destroy();
-  stopUpdateWatcher && stopUpdateWatcher();
+  getProxy().destroy();
 });
 
 // 创建沙箱运行环境
 function createSandbox() {
   if (sandbox) {
-    proxy.destroy();
-    if (stopUpdateWatcher) stopUpdateWatcher();
+    getProxy().destroy();
     container.value.removeChild(sandbox);
   }
   // 使用 iframe
@@ -86,94 +74,18 @@ function createSandbox() {
       'allow-top-navigation-by-user-activation'
     ].join(' ')
   );
+  sandbox.setAttribute(
+    'allow',
+    ['geolocation', 'midi', 'camera', 'microphone'].join(';')
+  );
 
-  sandbox.srcdoc = initImportLibsMap(srcdoc, store);
+  sandbox.srcdoc = prepareHTML();
   container.value.appendChild(sandbox);
 
-  proxy = new PreviewProxy(sandbox, {
-    on_fetch_progress: (progress: any) => {
-      // pending_imports = progress;
-    },
-    on_error: (event: any) => {
-      const msg =
-        event.value instanceof Error ? event.value.message : event.value;
-      if (
-        msg.includes('Failed to resolve module specifier') ||
-        msg.includes('Error resolving module specifier')
-      ) {
-        runtimeError.value = `${msg.replace(
-          /\. Relative references must.*$/,
-          ''
-        )}.\nTip: add an "import-map.json" file to specify import paths for dependencies.`;
-      } else {
-        runtimeError.value = event.value;
-      }
-    },
-    on_unhandled_rejection: (event: any) => {
-      let error = event.value;
-      if (typeof error === 'string') error = { message: error };
-
-      runtimeError.value = `Uncaught (in promise): ${error.message}`;
-    },
-    on_console: (log: any) => {
-      if (log.level === 'error') {
-        if (log.args[0] instanceof Error)
-          runtimeError.value = log.args[0].message;
-        else runtimeError.value = log.args[0];
-      } else if (log.level === 'warn') {
-        if (log.args[0].toString().includes('[Vue warn]')) {
-          runtimeWarning.value = log.args
-            .join('')
-            .replace(/\[Vue warn\]:/, '')
-            .trim();
-        }
-      }
-    },
-    on_console_group: (action: any) => {
-      // group_logs(action.label, false);
-    },
-    on_console_group_end: () => {
-      // ungroup_logs();
-    },
-    on_console_group_collapsed: (action: any) => {
-      // group_logs(action.label, true);
-    }
-  });
+  const proxy = initProxy(sandbox);
   sandbox.addEventListener('load', () => {
     proxy.handle_links();
-    stopUpdateWatcher = watchEffect(updatePreview);
   });
-}
-
-async function updatePreview() {
-  // console.clear()
-  runtimeError.value = null;
-  runtimeWarning.value = null;
-  try {
-    const modules = compileModulesForPreview();
-    // eslint-disable-next-line no-console
-    console.log(`successfully compiled ${modules.length} modules.`);
-
-    console.log(store.files);
-    // reset modules
-    await proxy.eval([
-      `window.__modules__ = {};window.__css__ = ${JSON.stringify(
-        loadGlobalStyles()
-      )};document.querySelector("html").classList['${
-        isDark.value ? 'add' : 'remove'
-      }']("dark")`,
-      ...modules,
-      `if (window.__app__) {
-        window.__app__.unmount()
-        document.getElementById('app').innerHTML = ''
-      }
-      document.getElementById('$_styles').innerHTML = window.__css__
-      `,
-      getBootstrap(store.type)
-    ]);
-  } catch (e: any) {
-    runtimeError.value = e.message;
-  }
 }
 </script>
 

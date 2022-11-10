@@ -1,24 +1,26 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { setActiveFile, orchestrator, removeFile } from '~/orchestrator'
+import { computed } from 'vue';
+import { setActiveFile, orchestrator, removeFile } from '~/orchestrator';
 
 const props = defineProps<{
-  name?: string
-  active: boolean
-}>()
+  name: string;
+  active: boolean;
+}>();
 
-const isActive = computed(() => orchestrator.activeFilename === props.name)
-const isProtectedFile = computed(() => props.name === 'App.vue')
+const isActive = computed(() => orchestrator.activeFilename === props.name);
+const isProtectedFile = computed(() => props.name === 'App.vue');
 
 const remove = () => {
-  if (props.name)
-    removeFile(props.name)
-}
+  if (props.name) removeFile(props.name);
+};
 </script>
 
 <template>
   <div
-    :class="{ '!pr-4': name === 'App.vue', 'dark:bg-dark-600 light-800': isActive }"
+    :class="{
+      '!pr-4': name === 'App.vue',
+      'dark:bg-dark-600 light-800': isActive
+    }"
     p="l-4 r-2"
     cursor="pointer"
     bg="hover:(light-800 dark:dark-600)"

@@ -2,8 +2,8 @@
 import type { Fn, isKeyOf } from '@antfu/utils';
 import { ref, computed, reactive } from 'vue';
 import { useVModel } from '@vueuse/core';
-import { templateList } from '~/templates/templates';
-import type { KeyList } from '~/templates/templates';
+import { templateList } from '~/templates';
+import type { KeyList } from '~/templates';
 import { orchestrator, orchestratorInit } from '~/orchestrator';
 
 const emit = defineEmits(['closeDialog']);
@@ -14,8 +14,8 @@ const icons = import.meta.globEager('../../assets/img/template/*') as {
 };
 
 function getIcon(icon: string) {
-  for (const path in icons) {
-    if (path.indexOf(icon) > 0) return icons[path].default;
+  for (const icon_path in icons) {
+    if (new RegExp(`/${icon}`).test(icon_path)) return icons[icon_path].default;
   }
   return '';
 }

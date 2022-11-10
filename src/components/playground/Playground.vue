@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { Splitpanes, Pane } from 'splitpanes';
-import { orchestrator, onShouldUpdateContent } from '~/orchestrator';
+import {
+  sourceType,
+  orchestrator,
+  onShouldUpdateContent
+} from '~/orchestrator';
+import { settings } from '~/configs/settings';
+import { contentType } from '~/logic/usePreview/update';
 
 const initialScript = ref('');
 const initialTemplate = ref('');
@@ -19,12 +25,13 @@ onShouldUpdateContent(() => {
   }
 });
 
-const onContentChanged = (source: string, content: string) => {
-  if (orchestrator.activeFile) {
-    if (source === 'script') orchestrator.activeFile.script = content;
-    if (source === 'template') orchestrator.activeFile.template = content;
-    if (source === 'style') orchestrator.activeFile.style = content;
-  }
+// 内容变动
+const onContentChanged = (type: sourceType, content: string) => {
+  if (!orchestrator.activeFile) return;
+  contentType.value = type;
+  if (type === 'script') orchestrator.activeFile.script = content;
+  if (type === 'template') orchestrator.activeFile.template = content;
+  if (type === 'style') orchestrator.activeFile.style = content;
 };
 </script>
 
@@ -43,7 +50,7 @@ const onContentChanged = (source: string, content: string) => {
             >
               <template #default>
                 <Editor
-                  language="javascript"
+                  language="typescript"
                   :value="initialScript"
                   @change="(content) => onContentChanged('script', content)"
                 />
@@ -93,12 +100,12 @@ const onContentChanged = (source: string, content: string) => {
       </div>
     </Pane>
     <!-- 右侧部分 -->
-    <Pane size="40">
+    <Pane>
       <Splitpanes horizontal class="default-theme">
-        <Pane>
+        <Pane v-if="settings.preview" size="70">
           <DeviceEmulation />
         </Pane>
-        <Pane size="30">
+        <Pane>
           <Container title="Console">
             <Console />
           </Container>

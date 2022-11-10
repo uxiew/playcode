@@ -3,34 +3,32 @@
 import { useFetch, useLocalStorage } from '@vueuse/core';
 import type { Ref } from 'vue';
 
-export type PkgSource = 'unpkg' | 'jsdelivr' | 'jsdelivr-fastly';
+export type PkgSource = 'unpkg' | 'jsdelivr' | 'jsdelivr-fastly' | 'esm';
 
 export type Package = {
   name: string; // 名字
-  version: string | undefined; // 版本
-  path: string; // 路径
+  version?: string; // 版本
+  path?: string; // 路径
   url?: string; // 在线 umd
   active?: boolean; // 启用
   description?: string; // 描述
   source?: PkgSource; // 来源
 };
 
-export const genUnpkgLink = (
-  pkg: string,
-  version: string | undefined,
-  path: string
-) => {
+export const getESMUrl = ({
+  name,
+  version = '',
+  path = '',
+  source
+}: Package) => {
   version = version ? `@${version}` : '';
-  return `https://unpkg.com/${pkg}${version}${path}`;
-};
-
-export const genJsdelivrLink = (
-  pkg: string,
-  version: string | undefined,
-  path: string
-) => {
-  version = version ? `@${version}` : '';
-  return `https://cdn.jsdelivr.net/npm/${pkg}${version}${path}`;
+  let server =
+    source === 'unpkg'
+      ? 'https://unpkg.com/'
+      : source === 'esm'
+      ? 'https://esm.sh/'
+      : 'https://cdn.jsdelivr.net/npm/';
+  return server + `${name}${version}${path}`;
 };
 
 export const cdn = useLocalStorage<PkgSource>('setting-cdn', 'jsdelivr-fastly');
@@ -63,18 +61,13 @@ export function pkgFetch(packages: Package[]): Package[] {
   //     version: '9.0.0'
   //   }
   const deps = [];
+
   for (const dep of packages) {
     deps.push({
       ...dep,
       source: dep.source || 'unpkg',
       description: dep.name,
-      url:
-        dep.url ||
-        (dep.source === 'unpkg' ? genUnpkgLink : genJsdelivrLink)(
-          dep.name,
-          dep.version,
-          dep.path
-        )
+      url: dep.url || getESMUrl(dep)
     });
   }
 

@@ -1,14 +1,11 @@
 import { SFCDescriptor, BindingMetadata } from '@vue/compiler-sfc';
 import * as defaultCompiler from '@vue/compiler-sfc';
-import { ref } from 'vue';
 import { orchestrator as store } from '../orchestrator';
 import type { OrchestratorFile as File } from '../orchestrator';
-import { generateStyles } from './windiCompiler';
-import { isStyleFile } from '~/utils/tools';
-import { processFile } from './moduleCompiler';
+import { generateWidiCSS } from './windiCompiler';
+import { settings } from '~/configs/settings';
 // import { scssCompiler } from './styleCompiler';
 
-export const MAIN_FILE = 'App.vue';
 export const COMP_IDENTIFIER = '__sfc__';
 
 /**
@@ -50,30 +47,6 @@ export async function compileVueFile({ filename, code, compiled }: File) {
     return;
   }
   const id = await hashId(filename);
-
-  if (!filename.endsWith('.vue')) {
-    // ts|js
-    if (/\.(t|j)s$/.test(filename)) {
-      processFile;
-      compiled.js = compiled.ssr = code;
-    }
-    // css|scss|less
-    isStyleFile(filename) && (compiled.css = code);
-    /*(compiled.css = (
-       await defaultCompiler.compileStyleAsync({
-          source: code,
-          filename,
-          id,
-          preprocessLang: 'scss',
-          preprocessCustomRequire: async (id: string) => {
-            // console.log(scssCompiler);
-            // return scssCompiler;
-          }
-        }) 
-      ).code);*/
-    store.errors = [];
-    return;
-  }
 
   const { errors, descriptor } = SFCCompiler.parse(code, {
     filename,
@@ -162,8 +135,10 @@ export async function compileVueFile({ filename, code, compiled }: File) {
   // styles
   let css = '';
 
-  // TODO Compile windicss styles
-  // if (descriptor.template && descriptor.template.content) css = generateStyles(descriptor.template.content);
+  // TODO Compile windicss styles or not
+  if (descriptor.template?.content) {
+    if (settings.windicss) css = generateWidiCSS(descriptor.template.content);
+  }
 
   for (const style of descriptor.styles) {
     if (style.module) {
