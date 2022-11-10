@@ -2,6 +2,8 @@ import { createRoot } from 'react-dom/client';
 
 import { App } from './App.jsx'
 
-createRoot( 
+const root = createRoot( 
   document.querySelector('#root')
-).render(<App />)
+)
+
+root.render(<App />)

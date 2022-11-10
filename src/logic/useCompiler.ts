@@ -79,7 +79,7 @@ export function getMountID() {
       store.files['main.tsx'] ||
       store.files['main.js'] ||
       store.files['main.jsx']
-    ).script
+    )?.script
   );
 }
 

@@ -38,7 +38,6 @@ const getBabelConfig = (filename: string): TransformOptions => ({
 });
 
 export async function babelCompile({ filename, code, compiled }: File) {
-  debugger;
   try {
     const transformed = transform(code, getBabelConfig(filename));
     compiled.js = transformed.code!;

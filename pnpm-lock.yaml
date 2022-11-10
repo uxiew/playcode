@@ -37,6 +37,7 @@ specifiers:
   vite-plugin-windicss: ^1.8.8
   vscode-html-languageservice: ^4.0.3
   vue: ^3.2.37
+  vue-console-feed: ^0.0.27
   vue-hako: ^0.0.1
   vue-template-compiler: ^2.7.13
   vue-tsc: ^0.0.24
@@ -63,6 +64,7 @@ dependencies:
   theme-vitesse: 0.1.11
   vscode-html-languageservice: 4.0.3
   vue: 3.2.37
+  vue-console-feed: 0.0.27
   vue-hako: 0.0.1
 
 devDependencies:
@@ -4785,6 +4787,10 @@ packages:
     resolution: {integrity: sha512-KRaPtMDpu++OfvAzNQYE5U7WT5NoMA6l9B0buC4PhYoDILVLY8zN7Sp9cHXAgLhH59jI3lKzVoNqyf4OGRv7QQ==}
     dev: false
 
+  /sprintf-js/1.1.2:
+    resolution: {integrity: sha512-VE0SOVEHCk7Qc8ulkWw3ntAzXuqf7S2lvwQaDLRnUeIEaKNQJzV6BwmLKhOqT61aGhfUMrXeaBk+oDGCzvhcug==}
+    dev: false
+
   /string.prototype.matchall/4.0.7:
     resolution: {integrity: sha512-f48okCX7JiwVi1NXCVWcFnZgADDC/n2vePlQ/KUCNqCikLLilQvwjMO8+BHVKvgzH0JB0J9LEPgxOGT02RoETg==}
     dependencies:
@@ -5208,6 +5214,13 @@ packages:
 
   /vscode-uri/3.0.2:
     resolution: {integrity: sha512-jkjy6pjU1fxUvI51P+gCsxg1u2n8LSt0W6KrCNQceaziKzff74GoWmjVG46KieVzybO1sttPQmYfrwSHey7GUA==}
+    dev: false
+
+  /vue-console-feed/0.0.27:
+    resolution: {integrity: sha512-T5HdWvR5Xp5doIwbtv28lU+szJJNV5asiXa5cIYU33BhFxfUo+ky+S3Vsp6Du+SavRK0GgDobNzXrp4Il1QKKA==}
+    engines: {node: '>=10'}
+    dependencies:
+      sprintf-js: 1.1.2
     dev: false
 
   /vue-demi/0.9.1_vue@3.2.37:

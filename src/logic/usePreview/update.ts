@@ -10,7 +10,7 @@ export async function updatePkgs(pkg: string) {
 }
 
 function update(name: string, content: string, type?: string) {
-  console.log('contentType.value', contentType.value);
+  console.log('----update----', contentType.value);
   return getProxy().eval(
     `const code = ${JSON.stringify(content)};
      __update__('${type || contentType.value}','${name}',code)`

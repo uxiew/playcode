@@ -11,20 +11,29 @@
     return Promise.resolve(window.__modules__[key]);
   };
 
+  function addScript(id = ':update:', fn) {
+    const scriptEl = document.createElement('script');
+    scriptEl.setAttribute('type', 'module');
+    scriptEl.setAttribute('id', id);
+
+    if (fn) fn(scriptEl);
+    document.head.appendChild(scriptEl);
+    scriptEl.onerror = (err) => send_error(err.message, err.stack);
+    return scriptEl;
+  }
+
   window.__update__ = (type, name, content) => {
     if (type === 'script') {
-      document.getElementsByTagName(type)[name]?.remove();
-      const scriptEl = document.createElement('script');
-      scriptEl.setAttribute('type', 'module');
-      scriptEl.setAttribute('id', name);
-      scriptEl.innerHTML = `${content}`;
-      document.head.appendChild(scriptEl);
+      addScript(
+        name,
+        (scriptEl) => (
+          document.getElementsByTagName(type)[name]?.remove(),
+          (scriptEl.innerHTML = `${content}`)
+        )
+      );
     } else {
       document.getElementsByTagName(type)[name].innerHTML = content;
     }
-  };
-  window.__updateStyles = (key, content) => {
-    document.getElementById(key).innerHTML = content;
   };
 
   async function handle_message(ev) {
@@ -42,22 +51,11 @@
         let { script: scripts } = ev.data.args;
         if (typeof scripts === 'string') scripts = [scripts];
         for (const scriptStr of scripts) {
-          const [id, ...script] = scriptStr.split(':_:');
-          const scriptEl = document.createElement('script');
-          scriptEl.setAttribute('type', 'module');
-          scriptEl.setAttribute('id', ':update:');
-          script.length > 0 && scriptEl.setAttribute('id', id);
-          // send ok in the module script to ensure sequential evaluation
-          // of multiple proxy.eval() calls
-          const done = new Promise((resolve) => {
-            window.__next__ = resolve;
-          });
-          scriptEl.innerHTML = `${script.join('') || id}\nwindow.__next__();`;
-          document.head.appendChild(scriptEl);
-          scriptEl.onerror = (err) => send_error(err.message, err.stack);
-          await done;
+          addScript(
+            ':update:',
+            (scriptEl) => (scriptEl.innerHTML = `${scriptStr}`)
+          );
         }
-        // window.__next__ = undefined
         send_ok();
       } catch (e) {
         send_error(e.message, e.stack);

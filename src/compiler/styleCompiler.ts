@@ -19,13 +19,10 @@ export function compileStyleFile({ filename, style, compiled }: File) {
        }) 
      ).code);*/
   // if (filename.endsWith('.css')) return (compiled.css = style);
-  console.log(style);
   compiled.css = style;
 
   // TODO scss or less
   // const compressed = sass.compileString(code, { style: 'compressed' });
   // @ts-ignore
   // less.render(code, {}, function (error, output) {});
-
-  console.log(compiled.css);
 }
