@@ -44,8 +44,6 @@ watch(
   (ready) => {
     if (ready) {
       createSandbox();
-    } else {
-      previewState.loaded = false;
     }
   }
 );

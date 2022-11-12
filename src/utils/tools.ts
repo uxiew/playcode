@@ -1,5 +1,8 @@
+import { MAIN_FILE_REG } from '~/configs/settings';
+
 export function parseSfc(code: string) {}
 
+export const isEntryFile = (name: string) => MAIN_FILE_REG.test(name);
 export const isStyleFile = (name: string) => /\.(sc|le|c)ss$/.test(name);
 
 export const isScriptFile = (name: string) => /\.(j|t|mj|cj)s$/.test(name);

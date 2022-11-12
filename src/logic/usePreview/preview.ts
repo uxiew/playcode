@@ -1,7 +1,9 @@
 import { reactive, ref, watch } from 'vue';
 import { orchestrator as store } from '~/orchestrator';
+import { ConsoleApi } from '../useConsole';
+import { prepareHTML } from './load';
 import { PreviewProxy } from './PreviewProxy';
-import { updateFile } from './update';
+import { updateFile, updateNewFile } from './update';
 
 export interface PreviewState {
   // ready for run!
@@ -53,14 +55,16 @@ export function initProxy(sandbox: HTMLIFrameElement) {
 
       runtimeError.value = `Uncaught (in promise): ${error.message}`;
     },
-    on_console: (log: any) => {
-      if (log.level === 'error') {
-        if (log.args[0] instanceof Error)
-          runtimeError.value = log.args[0].message;
-        else runtimeError.value = log.args[0];
-      } else if (log.level === 'warn') {
-        if (log.args[0].toString().includes('[Vue warn]')) {
-          runtimeWarning.value = log.args
+    on_console: ({ level, args }: any) => {
+      // @ts-ignore
+      // ConsoleApi[level](...args);
+      console.log(level, args);
+      if (level === 'error') {
+        if (args[0] instanceof Error) runtimeError.value = args[0].message;
+        else runtimeError.value = args[0];
+      } else if (level === 'warn') {
+        if (args[0].toString().includes('[Vue warn]')) {
+          runtimeWarning.value = args
             .join('')
             .replace(/\[Vue warn\]:/, '')
             .trim();
@@ -93,20 +97,23 @@ export function updatePreview() {
 
   try {
     if (!store.activeFile) return;
-    const { filename, code } = store.activeFile;
+    const { filename, code, newly, compiled } = store.activeFile;
     // eslint-disable-next-line no-console
 
     console.log(`【当内容更改时，进行视图的更新】✅\n`, filename, state);
     // await proxy.eval([
     //   `
-    //   //   if (window.__app__) {
-    //     //   window.__app__.unmount()
-    //     //   documeupdatent.getElementById('app').innerHTML = ''
-    //     // }`
+    //   if (window.__app__) {
+    //   window.__app__.unmount()
+    //   documeupdatent.getElementById('app').innerHTML = ''
+    // }`
     // ]);
 
+    // 新增了文件，动态更新预览
+    if (newly) {
+      updateNewFile(filename);
+    }
     updateFile(filename);
-    // else _fullLoad();
   } catch (e: any) {
     runtimeError.value = e.message;
   }

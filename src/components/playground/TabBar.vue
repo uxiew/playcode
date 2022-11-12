@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { onClickOutside, useEventListener } from '@vueuse/core';
+import { orchestrator, renameFile, addFile } from '~/orchestrator';
 import {
-  orchestrator,
-  addFile as addOrchestratorFile,
-  OrchestratorFile
-} from '~/orchestrator';
-import { getExtension } from '~/utils/tools';
+  getExtension,
+  isScriptFile,
+  isStyleFile,
+  isTemplateFile
+} from '~/utils/tools';
 
 const fileNameInput = ref<HTMLInputElement>();
 const isAddingTab = ref(false);
@@ -19,7 +20,7 @@ useEventListener('keydown', (e) => {
   }
 });
 
-const addFile = () => {
+const addNewFile = () => {
   isAddingTab.value = false;
   if (filename.value.length === 0) return;
 
@@ -27,12 +28,20 @@ const addFile = () => {
 
   if (name in orchestrator.files) alert(name + ' File Already Exists!');
 
-  addOrchestratorFile(new OrchestratorFile(name, ' ', getExtension(name)));
+  addFile({
+    filename: name,
+    script: isScriptFile(name) ? ' ' : '',
+    template: isTemplateFile(name) ? ' ' : '',
+    style: isStyleFile(name) ? ' ' : '',
+    ext: getExtension(name),
+    newly: name
+  });
+
   filename.value = '';
 };
 
 onClickOutside(fileNameInput, () => {
-  if (isAddingTab.value) addFile();
+  if (isAddingTab.value) addNewFile();
 });
 
 const addTab = () => {
@@ -47,14 +56,6 @@ const addTab = () => {
   <div
     class="bg-light-500 h-8 overflow-hidden border-light-900 dark:border-dark-400 border-1 dark:bg-dark-800 rounded-t-md border-b flex flex-row items-center pr-2"
   >
-    <!-- <Tab
-      v-for="file in orchestrator.files"
-      :key="file.filename"
-      :active="file.filename === orchestrator.activeFilename"
-      :name="file.filename"
-    >
-      {{ file.filename }}
-    </Tab> -->
     <template v-for="file in orchestrator.files">
       <Tab
         v-if="!file.closed"
@@ -74,7 +75,7 @@ const addTab = () => {
           bg="transparent"
           type="text"
           placeholder="demo.ts"
-          @keydown.enter="addFile()"
+          @keydown.enter="addNewFile()"
         />
       </Tab>
     </div>

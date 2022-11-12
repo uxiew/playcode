@@ -13,8 +13,9 @@ The goal of the project: fast,、prototype development。So it has some caveats.
 # notice
 1. 每个项目必须要有 `main.ts/js`
 2. 需要在 package 字段中写好依赖库的 esm 地址
-3. `index.html`中只能接受`body`体内容！
-4. 如果未定义`index.html`文件，内部会自动模拟`index.html` 
+3. 只能有一个html，为 `index.html`
+4. `index.html`中只能接受`body`体内容！
+5. 如果未定义`index.html`文件，内部会自动模拟`index.html` 
 
 
 # target
@@ -38,8 +39,6 @@ The goal of the project: fast,、prototype development。So it has some caveats.
 6. 预览页面-loading
 
 
-
-
 # reference
 * https://segmentfault.com/a/1190000040746839
 
@@ -50,6 +49,8 @@ The goal of the project: fast,、prototype development。So it has some caveats.
 * https://github.com/fanxq/code-blast-for-vscode
 
 * https://github.com/djyde/plastic-editor
+
+* https://github.com/wecde/wecde
 
 * [Vue SFC Playground](https://sfc.vuejs.org/)
 

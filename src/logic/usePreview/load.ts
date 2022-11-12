@@ -36,7 +36,8 @@ export function normalizeHTML(html: string, template?: string) {
 }
 
 /**
- * prepare html file, initialize runtime libs's Map，
+ * prepare `index.html` file for preview, initialize runtime libs's Map，
+ * @param reload 重新渲染
  */
 export function prepareHTML(): string {
   let compiled = store.files['index.html']?.compiled;
@@ -59,7 +60,7 @@ export function prepareHTML(): string {
 /**
  * 合并css并加载css
  */
-export const loadStyles = () => {
+export function loadStyles() {
   let styles = '';
   for (const name in store.files) {
     if (store.files[name].compiled.css) {
@@ -69,7 +70,7 @@ export const loadStyles = () => {
     }
   }
   return styles;
-};
+}
 
 function loadScripts() {
   const modules = compileModules();

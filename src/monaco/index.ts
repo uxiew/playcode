@@ -11,8 +11,9 @@ import vueuseTypes from '@vueuse/core/index.d.ts?raw';
 import vueTypes from '@vue/runtime-dom/dist/runtime-dom.d.ts?raw';
 
 import { orchestrator } from '~/orchestrator';
+import { loadWorks } from './worker';
 
-const setup = createSingletonPromise(async () => {
+export const setupMonaco = createSingletonPromise(async () => {
   monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
     ...monaco.languages.typescript.javascriptDefaults.getCompilerOptions(),
     noUnusedLocals: false,
@@ -72,51 +73,8 @@ const setup = createSingletonPromise(async () => {
     { immediate: true }
   );
 
-  // 加载所需的 worker
-  await Promise.all([
-    // load workers
-    (async () => {
-      const [
-        { default: EditorWorker },
-        { default: JSONWorker },
-        { default: CssWorker },
-        { default: HtmlWorker },
-        { default: TsWorker }
-      ] = await Promise.all([
-        import('monaco-editor/esm/vs/editor/editor.worker?worker'),
-        import('monaco-editor/esm/vs/language/json/json.worker?worker'),
-        import('monaco-editor/esm/vs/language/css/css.worker?worker'),
-        import('./languages/html/html.worker?worker'),
-        import('monaco-editor/esm/vs/language/typescript/ts.worker?worker')
-      ]);
-
-      self.MonacoEnvironment = {
-        getWorker(_: any, label: string) {
-          if (label === 'json') {
-            return new JSONWorker();
-          }
-          if (label === 'css' || label === 'scss' || label === 'less') {
-            return new CssWorker();
-          }
-          if (label === 'html' || label === 'handlebars' || label === 'razor')
-            return new HtmlWorker();
-          if (label === 'typescript' || label === 'javascript')
-            return new TsWorker();
-          return new EditorWorker();
-        }
-      };
-    })()
-  ]);
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const injection_arg = monaco;
-
-  /* __async_injections__ */
-
-  if (getCurrentInstance())
-    await new Promise<void>((resolve) => onMounted(resolve));
+  await loadWorks();
+  window.monaco = monaco;
 
   return { monaco };
 });
-
-export default setup;

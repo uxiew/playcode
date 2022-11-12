@@ -7,6 +7,7 @@ export default {
   title: 'JavaScript',
   homepage: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript',
   icon: 'javascript',
+  configs: {},
   packages: [
     {
       name: 'jquery',
@@ -17,16 +18,16 @@ export default {
   ],
   files: [
     {
-      name: 'index',
-      value: index,
-      active: !0,
-      extension: '.html'
-    },
-    {
       name: 'main',
       value: main,
       active: !0,
       extension: '.js'
+    },
+    {
+      name: 'index',
+      value: index,
+      active: !1,
+      extension: '.html'
     },
     {
       name: 'demo',
@@ -37,7 +38,7 @@ export default {
     {
       name: 'style',
       value: style,
-      active: !0,
+      active: !1,
       extension: '.scss'
     }
   ]

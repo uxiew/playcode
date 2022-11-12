@@ -1,8 +1,8 @@
-import { reactive, watch } from 'vue';
+import { nextTick, reactive, watch } from 'vue';
 import { createEventHook } from '@vueuse/core';
 import lz from 'lz-string';
 import { templateList } from './templates';
-import { isStyleFile, isTemplateFile } from './utils/tools';
+import { isEntryFile, isStyleFile, isTemplateFile } from './utils/tools';
 import { pkgFetch } from './utils/pkg';
 import templateHtml from '~/templates/template.html?raw';
 import { setSettings, settings } from '~/configs/settings';
@@ -11,12 +11,25 @@ import {
   updatePreview
 } from '~/logic/usePreview/preview';
 import { parserTemplate, compileFile } from '~/logic/useCompiler';
+import {
+  clearEditorState,
+  createOrUpdateModel,
+  getModel
+} from '~/monaco/utils';
 
 import type { Package } from './utils/pkg';
 import type { KeyList } from './templates';
 import type { Settings } from '~/configs/settings';
 
 export type sourceType = 'template' | 'script' | 'style';
+export interface TemplateResult {
+  filename: string;
+  ext: string;
+  script: string;
+  template: string;
+  style: string;
+  newly?: string;
+}
 
 export interface Orchestrator {
   // 项目类型 vue|react|angular
@@ -34,7 +47,7 @@ export interface Orchestrator {
   configs: Settings; // 项目当前的一些配置
 
   // 当前文件
-  readonly activeFile: OrchestratorFile | undefined;
+  readonly activeFile: OrchestratorFile;
   // 导入依赖图
   readonly importMap: string;
 }
@@ -44,9 +57,8 @@ const shouldUpdateContent = createEventHook();
 export class OrchestratorFile {
   filename: string;
   ext: string; // 扩展名
-  template: string;
-  script: string;
-  style: string;
+  // 标识新增
+  newly?: string = '';
   // 关闭该文件
   closed: boolean = false;
 
@@ -57,18 +69,18 @@ export class OrchestratorFile {
     html: ''
   };
 
-  constructor(
-    filename: string,
-    script: string | undefined,
-    ext?: string | undefined,
-    template?: string | undefined,
-    style?: string
-  ) {
+  constructor(filename: string, ext?: string | undefined) {
     this.filename = filename;
-    this.script = script || '';
     this.ext = ext || '';
-    this.template = template || '';
-    this.style = style || '';
+  }
+  get script() {
+    return getModel(this.filename, 'script')?.getValue() || '';
+  }
+  get template() {
+    return getModel(this.filename, 'template')?.getValue() || '';
+  }
+  get style() {
+    return getModel(this.filename, 'style')?.getValue() || '';
   }
 
   get code() {
@@ -116,7 +128,7 @@ export const orchestrator: Orchestrator = reactive({
 
   get activeFile() {
     // @ts-ignore
-    return orchestrator.files[this.activeFilename];
+    return this.files[this.activeFilename];
   },
 
   get importMap() {
@@ -142,12 +154,9 @@ watch(
     orchestrator.files[orchestrator.activeFilename]?.code
   ],
   ([name1, content1], [name2, content2]) => {
-    if (content1 === undefined) return;
+    if (content1 === undefined || content2 === undefined) return;
     if (name1 !== name2) {
-      shouldUpdateContent.trigger(null);
-    }
-    if (name1 === name2 && content1 !== content2) {
-      updatePreview();
+      shouldUpdateContent.trigger({ newName: name1, oldName: name2 });
     }
   }
 );
@@ -177,21 +186,69 @@ export function exportState() {
 }
 
 /**
+ * rename a file
+ *
+ * @param file File content
+ */
+export async function renameFile({
+  filename: name,
+  newly
+}: {
+  filename: string;
+  newly: string;
+}) {
+  // 如果是重命名
+  if (!orchestrator.files[name]) {
+    orchestrator.files = {
+      ...orchestrator.files,
+      [newly]: orchestrator.files[name]
+    };
+    delete orchestrator.files[name];
+  }
+  setActiveFile(name);
+  orchestrator.files[name].newly = newly;
+
+  return compileFile(orchestrator.files[name]);
+}
+
+/**
  * Add a file to the orchestrator
  *
  * @param file File content
  */
-export function addFile(file: OrchestratorFile) {
+export async function addFile({
+  filename: name,
+  ext,
+  script,
+  template,
+  style,
+  newly
+}: TemplateResult) {
+  // 正常创建文件
+  // 兼容 vue 文件的分割
+  script && (await createOrUpdateModel(name, script, 'script'));
+  template && (await createOrUpdateModel(name, template, 'template'));
+  style && (await createOrUpdateModel(name, style, 'style'));
+
   orchestrator.files = {
     ...orchestrator.files,
-    [file.filename]: file
+    [name]: new OrchestratorFile(name, ext)
   };
 
-  return compileFile(orchestrator.files[file.filename]);
+  // 新建文件?
+  if (!!newly) {
+    setActiveFile(name);
+  }
+  // @ts-ignore
+  orchestrator.files[name].newly = !!newly;
+
+  return compileFile(orchestrator.files[name]);
 }
 
 export function setActiveFile(name: string) {
+  if (!orchestrator.files[name]) return;
   orchestrator.activeFilename = name;
+  // window.monaco.editor.setModel(getModel(name));
 }
 
 /**
@@ -213,9 +270,9 @@ export function removeFile(name: string) {
   }
 
   // 激活文件
-  setTimeout(() => {
-    setActiveFile(filesArr[nextFileIndex].filename);
-  }, 0);
+  setActiveFile(filesArr[nextFileIndex].filename);
+
+  // TODO 删除 editor
 }
 
 /**
@@ -224,20 +281,28 @@ export function removeFile(name: string) {
 export function resetInit() {
   previewState.ready = false;
   orchestrator.files = {};
+  clearEditorState();
 }
 
 export const onShouldUpdateContent = shouldUpdateContent.on;
 
-function mockHtml(type: KeyList) {
+async function mockHtml(type: KeyList) {
   const { files } = orchestrator;
   if (!files['index.html']) {
-    addFile(new OrchestratorFile('index.html', '', '.html', templateHtml, ''));
+    await addFile({
+      filename: 'index.html',
+      script: '',
+      ext: '.html',
+      template: templateHtml,
+      style: ''
+    });
     orchestrator.files['index.html'].closed = true;
   }
+  return Promise.resolve();
 }
 
 // ---初始化--
-export function orchestratorInit(type: KeyList = 'javascript') {
+export async function orchestratorInit(type: KeyList = 'javascript') {
   resetInit();
   const { files, packages, configs } = templateList[type];
   orchestrator.type = type;
@@ -248,19 +313,22 @@ export function orchestratorInit(type: KeyList = 'javascript') {
   orchestrator.packages = pkgFetch(packages);
 
   let num = 0;
-  files.forEach(({ name, active, value, extension }, i) => {
+
+  for (const { name, active, value, extension } of files) {
     const result = parserTemplate(name, extension, value);
-    active && setActiveFile(result[0]);
+    await addFile(result);
 
-    // 编译完成 ready = true
-    addFile(new OrchestratorFile(...result)).then(() => {
-      num++;
-      if (num === files.length) previewState.ready = true;
-    });
-  });
+    // 设置默认打开文件
+    if (isEntryFile(name)) {
+      setActiveFile(result.filename);
+    } else {
+      active && setActiveFile(result.filename);
+    }
+  }
 
-  if (settings.preview) mockHtml(type);
-
+  // 编译完成 ready = true
+  if (settings.preview) await mockHtml(type);
+  previewState.ready = true;
   shouldUpdateContent.trigger(null);
 }
 

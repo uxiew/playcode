@@ -1,11 +1,12 @@
 <script setup lang="ts">
+import { Console, ConsoleApi } from '~/logic/useConsole';
 import { orchestrator } from '~/orchestrator';
-
-// TODO use
 </script>
 
 <template>
   <div class="overflow-auto">
+    <Console :data="ConsoleApi.value" />
+
     <Message
       v-for="message in orchestrator.runtimeErrors"
       :key="message"

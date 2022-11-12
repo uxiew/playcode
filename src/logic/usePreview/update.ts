@@ -9,7 +9,24 @@ export async function updatePkgs(pkg: string) {
   // const modules = compileModules();
 }
 
-function update(name: string, content: string, type?: string) {
+/**
+ * 新增文件
+ * 只能 script、style 文件
+ */
+export function updateNewFile(name: string) {
+  const tag = contentType.value;
+  if (tag === 'template') return;
+  getProxy().iframe.srcdoc = getProxy().iframe.srcdoc.replace(
+    `</${tag}>`,
+    `</${tag}><${tag} ${
+      tag === 'script' ? 'type="module"' : ''
+    } id=${name}></${tag}>`
+  );
+
+  delete store.activeFile.newly;
+}
+
+function update(name: string, content: string, type?: sourceType) {
   console.log('----update----', contentType.value);
   return getProxy().eval(
     `const code = ${JSON.stringify(content)};
@@ -19,20 +36,26 @@ function update(name: string, content: string, type?: string) {
 
 // vue?svelte?ts?
 export async function updateFile(name: string) {
-  const file = store.files[name];
+  const file = store.activeFile;
 
   if (name.endsWith('.vue')) {
-    contentType.value = contentType.value === 'style' ? 'style' : 'script';
+    contentType.value = contentType.value !== 'style' ? 'style' : 'script';
   }
 
-  // TODO 只有 没有 app 或者 root id 的情况
   if (contentType.value !== 'style') {
     getProxy().eval(
       `const root_elem = document.getElementById("${getMountID()}");
-      if(root_elem){
-      document.body.removeChild(root_elem);const el = document.createElement("div");
+      if(root_elem){document.body.removeChild(root_elem);const el = document.createElement("div");
       el.setAttribute('id', 'app');document.body.appendChild(el);}`
     );
+  }
+
+  function scriptUpdate() {
+    const modules = compileModules();
+    modules.forEach((mod) => {
+      const [filename, js] = mod.split(':_:');
+      update(filename, js.replace(filename + ':_:', ''), 'script');
+    });
   }
 
   // when only vue'style be modified
@@ -43,14 +66,7 @@ export async function updateFile(name: string) {
       break;
 
     case 'script':
-      {
-        const modules = compileModules();
-        console.log('modules', modules);
-        modules.forEach((mod) => {
-          const [filename, js] = mod.split(':_:');
-          update(filename, js.replace(filename + ':_:', ''), 'script');
-        });
-      }
+      scriptUpdate();
       break;
     default:
       {
@@ -59,12 +75,7 @@ export async function updateFile(name: string) {
             store.files[name].compiled.html
           )}`
         );
-        const modules = compileModules();
-        console.log('modules', modules);
-        modules.forEach((mod) => {
-          const [filename, js] = mod.split(':_:');
-          update(filename, js.replace(filename + ':_:', ''), 'script');
-        });
+        scriptUpdate();
       }
       break;
   }

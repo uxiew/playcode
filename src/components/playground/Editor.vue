@@ -1,22 +1,31 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
-import { useMonaco } from '~/logic/useMonaco/';
+import { onMounted, ref, watch } from 'vue';
+import { initEditor, useMonaco } from '~/logic/useMonaco/';
+import { updatePreview } from '~/logic/usePreview/preview';
+import { orchestrator as store, sourceType } from '~/orchestrator';
+import { setupMonaco } from '~/monaco';
 
 const emit = defineEmits<(e: 'change', content: string) => void>();
-const props = defineProps<{ language: string; value: string }>();
+const props = defineProps<{
+  language: string;
+  value: string;
+  type: sourceType;
+}>();
 
 const target = ref();
-const { onChange, setContent } = useMonaco(target, {
+
+const { onChange, getEditor } = useMonaco(target, {
   language: props.language,
-  code: props.value
+  type: props.type
 });
 
-watch(
-  () => props.value,
-  () => setContent(props.value)
-);
-onChange((content) => emit('change', content));
-emit('change', props.value);
+/**
+ * 当内容更改时
+ */
+onChange(async (content) => {
+  emit('change', content);
+  updatePreview();
+});
 </script>
 
 <template>

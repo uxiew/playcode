@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { setActiveFile, orchestrator, removeFile } from '~/orchestrator';
+import { isEntryFile } from '~/utils/tools';
 
 const props = defineProps<{
   name: string;
@@ -8,7 +9,7 @@ const props = defineProps<{
 }>();
 
 const isActive = computed(() => orchestrator.activeFilename === props.name);
-const isProtectedFile = computed(() => props.name === 'App.vue');
+const isProtectedFile = computed(() => isEntryFile(props.name));
 
 const remove = () => {
   if (props.name) removeFile(props.name);

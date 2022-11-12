@@ -3,11 +3,13 @@ import { ref, computed } from 'vue';
 import { Splitpanes, Pane } from 'splitpanes';
 import {
   sourceType,
-  orchestrator,
+  orchestrator as store,
   onShouldUpdateContent
 } from '~/orchestrator';
 import { settings } from '~/configs/settings';
-import { contentType } from '~/logic/usePreview/update';
+import { contentType } from '~/logic/usePreview';
+import { getEditor, getModel } from '~/monaco/utils';
+import { useMonaco } from '~/logic/useMonaco';
 
 const initialScript = ref('');
 const initialTemplate = ref('');
@@ -17,21 +19,17 @@ const onlyScript = computed(
   () => !initialStyle.value && !initialTemplate.value
 );
 
-onShouldUpdateContent(() => {
-  if (orchestrator.activeFile) {
-    initialScript.value = orchestrator.activeFile?.script;
-    initialTemplate.value = orchestrator.activeFile?.template;
-    initialStyle.value = orchestrator.activeFile?.style;
-  }
+onShouldUpdateContent((params) => {
+  console.log('onShouldUpdateContent', store.activeFile.filename, params);
+
+  initialScript.value = store.activeFile?.script;
+  initialTemplate.value = store.activeFile?.template;
+  initialStyle.value = store.activeFile?.style;
 });
 
 // 内容变动
 const onContentChanged = (type: sourceType, content: string) => {
-  if (!orchestrator.activeFile) return;
   contentType.value = type;
-  if (type === 'script') orchestrator.activeFile.script = content;
-  if (type === 'template') orchestrator.activeFile.template = content;
-  if (type === 'style') orchestrator.activeFile.style = content;
 };
 </script>
 
@@ -49,8 +47,10 @@ const onContentChanged = (type: sourceType, content: string) => {
               no-rounding
             >
               <template #default>
+                <!-- if 指令会导致 editor 示例化多个 -->
                 <Editor
                   language="typescript"
+                  type="script"
                   :value="initialScript"
                   @change="(content) => onContentChanged('script', content)"
                 />
@@ -63,13 +63,14 @@ const onContentChanged = (type: sourceType, content: string) => {
               <Pane v-if="initialTemplate">
                 <Container
                   title="Template"
-                  border="1  rounded-b-md"
+                  border="1 rounded-b-md"
                   no-overflow
                   :no-rounding="!initialScript ? true : false"
                 >
                   <template #default>
                     <Editor
-                      language="html"
+                      language="typescript"
+                      type="template"
                       :value="initialTemplate"
                       @change="
                         (content) => onContentChanged('template', content)
@@ -88,6 +89,7 @@ const onContentChanged = (type: sourceType, content: string) => {
                   <template #default>
                     <Editor
                       language="css"
+                      type="style"
                       :value="initialStyle"
                       @change="(content) => onContentChanged('style', content)"
                     />

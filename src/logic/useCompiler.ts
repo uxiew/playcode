@@ -8,10 +8,14 @@ import { compileVueFile } from '~/compiler/vueCompiler';
 import { babelCompile } from '~/compiler/BabelCompiler';
 import { compileStyleFile } from '~/compiler/styleCompiler';
 import { compileTemplateFile } from '~/compiler/templateCompiler';
-import { MAIN_FILE_REG } from '~/configs/settings';
-import { orchestrator as store, sourceType } from '~/orchestrator';
+import {
+  orchestrator as store,
+  sourceType,
+  TemplateResult
+} from '~/orchestrator';
 import {
   getContainerDOMId,
+  isEntryFile,
   isJSXFile,
   isScriptFile,
   isStyleFile,
@@ -24,7 +28,7 @@ import type { OrchestratorFile } from '~/orchestrator';
 export function compileModules() {
   let modules: Array<string> = [];
   for (const name in store.files)
-    if (MAIN_FILE_REG.test(name)) modules = processFile(store.files[name]);
+    if (isEntryFile(name)) modules = processFile(store.files[name]);
 
   // ["demo.ts:_:const __module__ = __modules__[\"demo.ts\"] =..."]
   return modules;
@@ -38,7 +42,7 @@ export async function compileFile(
   from?: sourceType
 ): Promise<void> {
   const { filename, script, template, style } = file;
-  if (script.trim() === template.trim() && template.trim() === style.trim())
+  if (script?.trim() === template?.trim() && template?.trim() === style?.trim())
     return;
 
   // 样式一般不会影响程序逻辑，比如 vue
@@ -90,13 +94,7 @@ export function parserTemplate(
   name: string,
   ext: string,
   code: string = ''
-): [
-  filename: string,
-  script: string,
-  ext: string,
-  template: string,
-  style: string
-] {
+): TemplateResult {
   let filename = name + ext,
     script = code,
     template = '',
@@ -120,5 +118,5 @@ export function parserTemplate(
     style = code;
   }
 
-  return [filename, script, ext, template, style];
+  return { filename, script, ext, template, style };
 }
