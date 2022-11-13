@@ -1,8 +1,8 @@
-import { Template } from '..';
+import { defineTemplate } from '..';
 import main from './main.jsx?raw';
 import style from './style.css?inline';
 
-export default <Template>{
+export default defineTemplate({
   title: 'SolidJS',
   homepage: 'https://www.solidjs.com/',
   icon: 'solidjs',
@@ -26,4 +26,4 @@ export default <Template>{
       extension: '.css'
     }
   ]
-};
+});

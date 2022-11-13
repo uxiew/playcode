@@ -1,15 +1,17 @@
-import { nextTick, reactive, watch } from 'vue';
+import { reactive, watch } from 'vue';
 import { createEventHook } from '@vueuse/core';
 import lz from 'lz-string';
 import { templateList } from './templates';
-import { isEntryFile, isStyleFile, isTemplateFile } from './utils/tools';
+import {
+  isEntryFile,
+  isNotUndefined,
+  isStyleFile,
+  isTemplateFile
+} from './utils/tools';
 import { pkgFetch } from './utils/pkg';
 import templateHtml from '~/templates/template.html?raw';
 import { setSettings, settings } from '~/configs/settings';
-import {
-  state as previewState,
-  updatePreview
-} from '~/logic/usePreview/preview';
+import { state as previewState } from '~/logic/usePreview/preview';
 import { parserTemplate, compileFile } from '~/logic/useCompiler';
 import {
   clearEditorState,
@@ -25,9 +27,9 @@ export type sourceType = 'template' | 'script' | 'style';
 export interface TemplateResult {
   filename: string;
   ext: string;
-  script: string;
-  template: string;
-  style: string;
+  script?: string;
+  style?: string;
+  template?: string;
   newly?: string;
 }
 
@@ -58,7 +60,7 @@ export class OrchestratorFile {
   filename: string;
   ext: string; // 扩展名
   // 标识新增
-  newly?: string = '';
+  newly?: string;
   // 关闭该文件
   closed: boolean = false;
 
@@ -74,13 +76,13 @@ export class OrchestratorFile {
     this.ext = ext || '';
   }
   get script() {
-    return getModel(this.filename, 'script')?.getValue() || '';
+    return getModel(this.filename, 'script')?.getValue();
   }
   get template() {
-    return getModel(this.filename, 'template')?.getValue() || '';
+    return getModel(this.filename, 'template')?.getValue();
   }
   get style() {
-    return getModel(this.filename, 'style')?.getValue() || '';
+    return getModel(this.filename, 'style')?.getValue();
   }
 
   get code() {
@@ -224,31 +226,27 @@ export async function addFile({
   style,
   newly
 }: TemplateResult) {
-  // 正常创建文件
+  // 支持空格字符串
   // 兼容 vue 文件的分割
-  script && (await createOrUpdateModel(name, script, 'script'));
-  template && (await createOrUpdateModel(name, template, 'template'));
-  style && (await createOrUpdateModel(name, style, 'style'));
+  isNotUndefined(script) && (await createOrUpdateModel(name, 'script', script));
+  isNotUndefined(style) && (await createOrUpdateModel(name, 'style', style));
+  isNotUndefined(template) &&
+    (await createOrUpdateModel(name, 'template', template));
 
   orchestrator.files = {
     ...orchestrator.files,
     [name]: new OrchestratorFile(name, ext)
   };
 
-  // 新建文件?
-  if (!!newly) {
+  // 处理新建文件
+  if (newly) {
+    // @ts-ignore
+    orchestrator.files[name].newly = true;
+    // 自动打开新建的文件
     setActiveFile(name);
   }
-  // @ts-ignore
-  orchestrator.files[name].newly = !!newly;
 
   return compileFile(orchestrator.files[name]);
-}
-
-export function setActiveFile(name: string) {
-  if (!orchestrator.files[name]) return;
-  orchestrator.activeFilename = name;
-  // window.monaco.editor.setModel(getModel(name));
 }
 
 /**
@@ -272,7 +270,16 @@ export function removeFile(name: string) {
   // 激活文件
   setActiveFile(filesArr[nextFileIndex].filename);
 
-  // TODO 删除 editor
+  // 清除对应 model
+  ['script', 'style', 'template'].forEach((type) =>
+    getModel(name, type as sourceType)?.dispose()
+  );
+}
+
+export function setActiveFile(name: string) {
+  if (!orchestrator.files[name]) return;
+  orchestrator.activeFilename = name;
+  // window.monaco.editor.setModel(getModel(name));
 }
 
 /**

@@ -1,8 +1,9 @@
-import { Template } from '..';
+import { defineTemplate } from '..';
 import script from './script.js?raw';
 
-export default <Template>{
+export default defineTemplate({
   title: 'RxJS',
+  homepage: '',
   icon: 'rxjs',
   packages: [
     {
@@ -28,4 +29,4 @@ export default <Template>{
       extension: '.json'
     }
   ]
-};
+});

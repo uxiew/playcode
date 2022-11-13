@@ -56,11 +56,11 @@ import nuxtjs from './nuxtjs';
 
 export type KeyList = keyof typeof templateList;
 
-export interface Template {
+interface Template {
   title: string;
   homepage: string;
   icon: string;
-  packages: Package[];
+  packages: Array<Package> | [];
   files: {
     name: string;
     value: string;
@@ -69,6 +69,10 @@ export interface Template {
     closed?: boolean;
   }[];
   configs?: Settings;
+}
+
+export function defineTemplate(template: Template) {
+  return template;
 }
 
 export const templateList: Record<string, Template> = {

@@ -1,12 +1,12 @@
-import { Template } from '..';
+import { defineTemplate } from '..';
 import main from './main.rs?raw';
 
-export default <Template>{
+export default defineTemplate({
   title: 'Rust',
   homepage: 'http://www.rust-lang.org/',
   icon: 'rust',
   configs: { preview: !1 },
-  packages: [{}],
+  packages: [],
   files: [
     {
       name: 'main',
@@ -22,4 +22,4 @@ export default <Template>{
       closed: !0
     }
   ]
-};
+});

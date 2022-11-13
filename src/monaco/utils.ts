@@ -1,6 +1,7 @@
 import { setupMonaco } from '~/monaco';
 import type { editor as Editor } from 'monaco-editor';
 import { orchestrator as store, sourceType } from '~/orchestrator';
+import { nextTick } from 'vue';
 
 const editorStatus = new Map();
 
@@ -8,7 +9,7 @@ export function saveModelStatus() {
   const preState = editorStatus.get('preState');
   if (preState) {
     const { name, type } = preState;
-    const editor = getEditor(name, type) as Editor.ICodeEditor;
+    const editor = getEditorByType(type) as Editor.ICodeEditor;
     editor && editorStatus.set(name, editor.saveViewState());
   }
 
@@ -21,12 +22,15 @@ export function restoreModelStatus(name: string, type: sourceType) {
     type
   });
 
-  const editor = getEditor(name, type) as Editor.ICodeEditor;
+  const editor = getEditorByType(type) as Editor.ICodeEditor;
   const preState = editorStatus.get(name);
 
   preState && editor?.restoreViewState(preState);
-  // 聚焦编辑器
-  editor?.focus();
+  // setTimeout 防止新建文件回车时导致出现多一行
+  setTimeout(() => {
+    // 聚焦编辑器
+    editor?.focus();
+  }, 100);
 }
 
 // 设置主题
@@ -41,21 +45,14 @@ export function setTheme() {
  * 清除所有存储
  */
 export function clearEditorState() {
+  // 取消事件监听
   editorStatus.get('listener')?.dispose();
   editorStatus.clear();
-  window.monaco?.editor.getEditors().forEach((editor) => editor.dispose());
-  window.monaco?.editor.getModels().forEach((model) => model.dispose());
-}
 
-/**
- * 获取 model
- */
-export function getEditor(name?: string, type?: sourceType) {
-  // model 是否存在
-  const editors = window.monaco.editor.getEditors();
-  return name && type
-    ? editors.find((editor) => editor.getModel()?.uri.fragment === type)
-    : editors;
+  (getEditorByType() as readonly Editor.ICodeEditor[])?.forEach((editor) =>
+    editor.dispose()
+  );
+  window.monaco?.editor.getModels().forEach((model) => model.dispose());
 }
 
 function getUri(name: string, type: string) {
@@ -64,6 +61,16 @@ function getUri(name: string, type: string) {
     scheme: 'playcode',
     fragment: type
   });
+}
+/**
+ * 获取 相同类型的 editor, type 为空获取所有实例化的editors
+ */
+export function getEditorByType(type?: sourceType) {
+  // model 是否存在
+  const editors = window.monaco?.editor.getEditors();
+  return type
+    ? editors.find((editor) => editor.getModel()?.uri.fragment === type)
+    : editors;
 }
 
 /**
@@ -84,12 +91,10 @@ export function createOrUpdateEditor(
   options: any
 ) {
   // model 是否存在
-  const allEditors = window.monaco.editor.getEditors();
+  const allEditors = getEditorByType()! as readonly Editor.ICodeEditor[];
 
   // 🐻 相同的 Editor 不会被卸载，所以不能再次挂载，否则会有错误提示。（可以通过 vue3 key-changing 来促使组件刷新）
-  const editor = allEditors.find(
-    (editor) => editor.getModel()?.uri.fragment === type
-  );
+  const editor = getEditorByType(type)! as Editor.ICodeEditor;
 
   if (editor?.getContainerDomNode() !== el) {
     // 销毁之前挂载在之前被vue3切换销毁的 dom 上的 editor
@@ -111,26 +116,13 @@ export function createOrUpdateEditor(
  */
 export async function createOrUpdateModel(
   name: string,
-  code: string,
-  sourceType: sourceType = 'script'
+  sourceType: sourceType = 'script',
+  code: string = ''
 ): Promise<Editor.ITextModel> {
-  const { monaco } = await setupMonaco();
+  const monaco = window.monaco || (await setupMonaco()).monaco;
   let model = getModel(name, sourceType);
 
-  if (model) {
-    if (model.getValue() !== code) {
-      model.pushEditOperations(
-        [],
-        [
-          {
-            range: model?.getFullModelRange(),
-            text: code
-          }
-        ],
-        () => []
-      );
-    }
-  } else if (name) {
+  if (!model) {
     // TODO vue 文件的拆分 高亮
 
     let type = '';
@@ -148,6 +140,7 @@ export async function createOrUpdateModel(
       jsx: 'javascript',
       tsx: 'typescript'
     };
+    // TODO language vue
     model = monaco.editor.createModel(
       code,
       config[type] || type,

@@ -8,6 +8,7 @@ import {
   isStyleFile,
   isTemplateFile
 } from '~/utils/tools';
+import { parserTemplate } from '~/logic/useCompiler';
 
 const fileNameInput = ref<HTMLInputElement>();
 const isAddingTab = ref(false);
@@ -20,6 +21,7 @@ useEventListener('keydown', (e) => {
   }
 });
 
+// 添加文件
 const addNewFile = () => {
   isAddingTab.value = false;
   if (filename.value.length === 0) return;
@@ -27,13 +29,15 @@ const addNewFile = () => {
   const name = filename.value;
 
   if (name in orchestrator.files) alert(name + ' File Already Exists!');
+  if (isTemplateFile(name)) {
+    alert('Only allow one index.html exists!');
+    return;
+  }
+
+  const ext = getExtension(name);
 
   addFile({
-    filename: name,
-    script: isScriptFile(name) ? ' ' : '',
-    template: isTemplateFile(name) ? ' ' : '',
-    style: isStyleFile(name) ? ' ' : '',
-    ext: getExtension(name),
+    ...parserTemplate(name.replace(ext, ''), ext, ''),
     newly: name
   });
 

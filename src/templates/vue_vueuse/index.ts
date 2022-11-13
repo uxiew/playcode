@@ -1,9 +1,9 @@
-import { Template } from '..';
+import { defineTemplate } from '..';
 import app from './App.vue?raw';
 import coordinate from './Coordinate.vue?raw';
 import main from './main.ts?raw';
 
-export default <Template>{
+export default defineTemplate({
   homepage: 'https://vueuse.org/',
   title: 'Vueuse',
   icon: 'vueuse',
@@ -60,4 +60,4 @@ export default <Template>{
       extension: '.vue'
     }
   ]
-};
+});

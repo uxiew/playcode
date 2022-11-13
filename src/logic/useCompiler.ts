@@ -14,6 +14,7 @@ import {
   TemplateResult
 } from '~/orchestrator';
 import {
+  isNotUndefined,
   getContainerDOMId,
   isEntryFile,
   isJSXFile,
@@ -96,27 +97,27 @@ export function parserTemplate(
   code: string = ''
 ): TemplateResult {
   let filename = name + ext,
-    script = code,
-    template = '',
-    style = '';
+    script = isNotUndefined(code) ? code : undefined,
+    template = undefined,
+    style = undefined;
 
   if (ext === '.vue') {
-    const descriptor = vueCompiler.parse(script, { filename }).descriptor;
+    const descriptor = vueCompiler.parse(code, { filename }).descriptor;
     script =
       descriptor.script?.content || descriptor.scriptSetup?.content || '';
     template = descriptor.template?.content || '';
     style = descriptor.styles[0]?.content;
   }
 
-  if (ext === '.html') {
-    script = '';
+  if (isTemplateFile(ext)) {
+    script = undefined;
     template = code;
   }
 
   if (isStyleFile(ext)) {
-    script = '';
+    script = undefined;
     style = code;
   }
 
-  return { filename, script, ext, template, style };
+  return { filename, ext, script, style, template };
 }

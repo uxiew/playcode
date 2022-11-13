@@ -1,9 +1,9 @@
-import { Template } from '..';
+import { defineTemplate } from '..';
 import app from './App.vue?raw';
 import main from './main.ts?raw';
 import style from './style.css?inline';
 
-export default <Template>{
+export default defineTemplate({
   title: 'Vue',
   homepage: 'https://cn.vuejs.org/api/',
   icon: 'vue',
@@ -37,4 +37,4 @@ export default <Template>{
       extension: '.ts'
     }
   ]
-};
+});

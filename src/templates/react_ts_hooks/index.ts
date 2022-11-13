@@ -1,10 +1,11 @@
-import { Template } from '..';
+import { defineTemplate } from '..';
 import app from './App.tsx?raw';
 import main from './main.tsx?raw';
 import style from './style.css?inline';
 
-export default <Template>{
+export default defineTemplate({
   title: 'React TypeScript Hooks',
+  homepage: 'https://',
   icon: 'react',
   packages: [
     {
@@ -59,4 +60,4 @@ export default <Template>{
       closed: !0
     }
   ]
-};
+});

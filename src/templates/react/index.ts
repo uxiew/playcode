@@ -1,11 +1,12 @@
-import { Template } from '..';
+import { defineTemplate } from '..';
 import app from './App.jsx?raw';
 import main from './main.jsx?raw';
 import style from './style.css?inline';
 
-export default <Template>{
+export default defineTemplate({
   title: 'React',
   icon: 'react',
+  homepage: '',
   configs: {},
   packages: [
     {
@@ -52,4 +53,4 @@ export default <Template>{
       extension: '.css'
     }
   ]
-};
+});

@@ -1,8 +1,8 @@
-import { Template } from '..';
+import { defineTemplate } from '..';
 import main from './main.js?raw';
 import style from './style.css?inline';
 
-export default <Template>{
+export default defineTemplate({
   homepage: 'https://threejs.org/',
   title: 'THREE.js',
   icon: 'threejs',
@@ -27,4 +27,4 @@ export default <Template>{
       extension: '.js'
     }
   ]
-};
+});

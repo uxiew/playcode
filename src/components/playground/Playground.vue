@@ -7,24 +7,24 @@ import {
   onShouldUpdateContent
 } from '~/orchestrator';
 import { settings } from '~/configs/settings';
+import { isNotUndefined } from '~/utils/tools';
 import { contentType } from '~/logic/usePreview';
-import { getEditor, getModel } from '~/monaco/utils';
-import { useMonaco } from '~/logic/useMonaco';
 
-const initialScript = ref('');
-const initialTemplate = ref('');
-const initialStyle = ref('');
+const script = ref();
+const style = ref();
+const template = ref();
 
-const onlyScript = computed(
-  () => !initialStyle.value && !initialTemplate.value
+const onlyHasScript = computed(
+  () => !hasValue('style') && !hasValue('template')
 );
 
-onShouldUpdateContent((params) => {
-  console.log('onShouldUpdateContent', store.activeFile.filename, params);
+const hasValue = (type: sourceType) =>
+  store.activeFile && isNotUndefined(store.activeFile[type]);
 
-  initialScript.value = store.activeFile?.script;
-  initialTemplate.value = store.activeFile?.template;
-  initialStyle.value = store.activeFile?.style;
+onShouldUpdateContent(() => {
+  script.value = store.activeFile?.script;
+  style.value = store.activeFile?.style;
+  template.value = store.activeFile?.template;
 });
 
 // 内容变动
@@ -39,7 +39,7 @@ const onContentChanged = (type: sourceType, content: string) => {
       <div class="h-full flex flex-col">
         <TabBar />
         <Splitpanes horizontal class="default-theme editors-height">
-          <Pane v-if="initialScript">
+          <Pane v-if="hasValue('script')">
             <Container
               title="Script"
               class="rounded-b-md"
@@ -51,27 +51,27 @@ const onContentChanged = (type: sourceType, content: string) => {
                 <Editor
                   language="typescript"
                   type="script"
-                  :value="initialScript"
+                  :value="script"
                   @change="(content) => onContentChanged('script', content)"
                 />
               </template>
             </Container>
           </Pane>
           <!-- vue or Svelte -->
-          <Pane v-if="!onlyScript">
+          <Pane v-if="!onlyHasScript">
             <Splitpanes vertical>
-              <Pane v-if="initialTemplate">
+              <Pane v-if="hasValue('template')">
                 <Container
                   title="Template"
                   border="1 rounded-b-md"
                   no-overflow
-                  :no-rounding="!initialScript ? true : false"
+                  :no-rounding="!script ? true : false"
                 >
                   <template #default>
                     <Editor
                       language="typescript"
                       type="template"
-                      :value="initialTemplate"
+                      :value="template"
                       @change="
                         (content) => onContentChanged('template', content)
                       "
@@ -79,18 +79,18 @@ const onContentChanged = (type: sourceType, content: string) => {
                   </template>
                 </Container>
               </Pane>
-              <Pane v-if="initialStyle">
+              <Pane v-if="hasValue('style')">
                 <Container
                   title="Style"
                   border="1  rounded-b-md"
                   no-overflow
-                  :no-rounding="!initialScript ? true : false"
+                  :no-rounding="!script ? true : false"
                 >
                   <template #default>
                     <Editor
                       language="css"
                       type="style"
-                      :value="initialStyle"
+                      :value="style"
                       @change="(content) => onContentChanged('style', content)"
                     />
                   </template>

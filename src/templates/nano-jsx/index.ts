@@ -1,8 +1,8 @@
-import { Template } from '..';
+import { defineTemplate } from '..';
 import app from './App.tsx?raw';
 import main from './main.tsx?raw';
 
-export default <Template>{
+export default defineTemplate({
   homepage: 'https://nanojsx.io/',
   title: 'nano-jsx',
   icon: 'nano-jsx',
@@ -35,4 +35,4 @@ export default <Template>{
       extension: '.tsx'
     }
   ]
-};
+});

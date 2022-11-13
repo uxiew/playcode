@@ -4,7 +4,7 @@ import { until, createEventHook, tryOnUnmounted } from '@vueuse/core';
 import darktheme from 'theme-vitesse/themes/vitesse-dark.json';
 import lightTheme from 'theme-vitesse/themes/vitesse-light.json';
 
-import type { editor as Editor, IDisposable } from 'monaco-editor';
+import type { editor as Editor } from 'monaco-editor';
 
 import { editorPlugins } from '~/monaco/plugins/editor';
 import { setupMonaco } from '~/monaco';
@@ -17,22 +17,7 @@ import {
   saveModelStatus
 } from '~/monaco/utils';
 import { orchestrator as store, sourceType } from '~/orchestrator';
-
-// 编辑器设置
-const monacoOptions: Editor.IStandaloneEditorConstructionOptions = {
-  wordWrap: 'on',
-  fontSize: 14,
-  tabSize: 4,
-  insertSpaces: true,
-  autoClosingQuotes: 'always',
-  detectIndentation: false,
-  folding: false,
-  automaticLayout: true,
-  theme: 'vitesse-dark',
-  minimap: {
-    enabled: false
-  }
-};
+import { monacoOptions } from '~/monaco/options';
 
 /***
  * 组件的卸载 会导致该方法重复调用
@@ -67,12 +52,11 @@ export function useMonaco(
 
     watch(
       () => store.activeFilename,
-      (name) => {
+      async (name) => {
         const el = unref(target);
         if (!el) return;
 
-        const { ext, script, template, style } = store.activeFile;
-
+        // const { ext, script, template, style } = store.activeFile;
         // 状态存储
         const editorStatus = saveModelStatus();
         editor = createOrUpdateEditor(el, name, options.type, monacoOptions);
@@ -95,7 +79,6 @@ export function useMonaco(
         }
 
         const listener = editor.getModel()?.onDidChangeContent((ev) => {
-          console.log(name, options, editor.getValue());
           changeEventHook.trigger(editor.getValue());
           plugins.forEach(({ onContentChanged }) => onContentChanged(editor));
         });

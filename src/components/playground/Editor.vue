@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue';
-import { initEditor, useMonaco } from '~/logic/useMonaco/';
+import { ref } from 'vue';
+import { useMonaco } from '~/logic/useMonaco/';
+import { contentType } from '~/logic/usePreview';
 import { updatePreview } from '~/logic/usePreview/preview';
 import { orchestrator as store, sourceType } from '~/orchestrator';
-import { setupMonaco } from '~/monaco';
+import { trimCode } from '~/utils/tools';
 
 const emit = defineEmits<(e: 'change', content: string) => void>();
 const props = defineProps<{
@@ -19,12 +20,17 @@ const { onChange, getEditor } = useMonaco(target, {
   type: props.type
 });
 
+let preContent = trimCode(props.value);
 /**
  * 当内容更改时
  */
-onChange(async (content) => {
+onChange((content) => {
   emit('change', content);
-  updatePreview();
+  content = trimCode(content);
+  if (content !== preContent) {
+    updatePreview();
+  }
+  preContent = content;
 });
 </script>
 

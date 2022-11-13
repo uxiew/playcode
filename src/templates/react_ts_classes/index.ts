@@ -2,10 +2,11 @@ import app from './App.tsx?raw';
 import main from './main.tsx?raw';
 import hello from './hello.tsx?raw';
 import style from './style.css?inline';
-import { Template } from '..';
+import { defineTemplate } from '..';
 
-export default <Template>{
+export default defineTemplate({
   title: 'React TypeScript Classes',
+  homepage: '',
   icon: 'react',
   packages: [
     {
@@ -67,4 +68,4 @@ export default <Template>{
       closed: !0
     }
   ]
-};
+});

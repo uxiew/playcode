@@ -1,10 +1,11 @@
-import { Template } from '..';
+import { defineTemplate } from '..';
 import app from './App.vue?raw';
 import main from './main.ts?raw';
 import style from './style.css?inline';
 
-export default <Template>{
+export default defineTemplate({
   title: 'Element Plus',
+  homepage: '',
   icon: 'vue_element',
   configs: {},
   packages: [
@@ -59,4 +60,4 @@ export default <Template>{
       extension: '.css'
     }
   ]
-};
+});

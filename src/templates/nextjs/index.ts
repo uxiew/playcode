@@ -1,7 +1,7 @@
-import { Template } from '..';
+import { defineTemplate } from '..';
 import main from './main.ts?raw';
 
-export default <Template>{
+export default defineTemplate({
   homepage: 'https://nextjs.org',
   title: 'NextJS',
   icon: 'nextjs',
@@ -14,4 +14,4 @@ export default <Template>{
       active: !0
     }
   ]
-};
+});

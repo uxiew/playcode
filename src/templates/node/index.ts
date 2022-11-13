@@ -1,7 +1,7 @@
-import { Template } from '..';
+import { defineTemplate } from '..';
 import main from './main.ts?raw';
 
-export default <Template>{
+export default defineTemplate({
   title: 'Node Typescript',
   homepage: 'https://nodejs.org/',
   icon: 'node',
@@ -17,4 +17,4 @@ export default <Template>{
       extension: '.ts'
     }
   ]
-};
+});

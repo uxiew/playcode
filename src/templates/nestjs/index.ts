@@ -1,10 +1,11 @@
-import { Template } from '..';
+import { defineTemplate } from '..';
 import main from './main.ts?raw';
 
-export default <Template>{
+export default defineTemplate({
   title: 'NestJS',
   icon: 'nestjs',
-  packages: [{}],
+  homepage: '',
+  packages: [],
   files: [
     {
       name: 'main',
@@ -13,4 +14,4 @@ export default <Template>{
       active: !0
     }
   ]
-};
+});
