@@ -37,8 +37,6 @@ export const extensions = [
 export const settings: Settings = reactive({
   preview: true, // containerId: string; // 或许可以删除它，通过分析代码
   babel: {
-    pragma: '',
-    importSource: '',
     runtime: 'automatic'
   },
   windicss: false
