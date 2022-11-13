@@ -15,13 +15,24 @@ export async function updatePkgs(pkg: string) {
  */
 export function updateNewFile(name: string) {
   const tag = contentType.value;
-  if (tag === 'template') return;
-  getProxy().iframe.srcdoc = getProxy().iframe.srcdoc.replace(
-    `</${tag}>`,
-    `</${tag}><${tag} ${
-      tag === 'script' ? 'type="module"' : ''
-    } id=${name}></${tag}>`
-  );
+  const iSrcdoc = getProxy().iframe.srcdoc;
+  switch (tag) {
+    case 'script':
+      {
+        iSrcdoc.replace(
+          `}}</script>`,
+          `}}</script>\n<script type="module" id=${name}></script>`
+        );
+      }
+      break;
+    case 'style':
+      {
+        iSrcdoc.replace(`</style>`, `</style><style id=${name}></style>`);
+      }
+      break;
+    default:
+      break;
+  }
 
   delete store.activeFile.newly;
 }
