@@ -58,14 +58,6 @@ export default defineTemplate({
       active: !1,
       closed: !1,
       extension: '.tsx'
-    },
-    {
-      name: 'package',
-      extension: '.json',
-      value:
-        '{\n  "dependencies": {\n    "react": "18.0.0",\n    "react-dom": "18.0.0"\n  }\n}',
-      active: !1,
-      closed: !0
     }
   ]
 });

@@ -5,7 +5,7 @@ import style from './style.css?inline';
 
 export default {
   title: 'Svelte',
-  homepage: 'http://svelte',
+  homepage: 'https://svelte.dev/tutorial',
   icon: 'svelte',
   packages: [
     {

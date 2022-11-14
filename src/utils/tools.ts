@@ -6,7 +6,7 @@ export const isNotUndefined = (value: any) => {
 
 export const isEntryFile = (name: string) => MAIN_FILE_REG.test(name);
 
-export const isStyleFile = (name: string) => /\.(sc|le|c)ss$/.test(name);
+export const isStyleFile = (name: string) => /\.(sc|sa|le|c)ss$/.test(name);
 
 export const isScriptFile = (name: string) => /\.(j|t|mj|cj)s$/.test(name);
 

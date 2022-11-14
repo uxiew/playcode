@@ -75,7 +75,7 @@ export async function compileFile(
 }
 
 /**
- * 获取 挂载点 id
+ * 获取 react/vue 应用的 DOM 挂载点 id
  */
 export function getMountID() {
   return getContainerDOMId(

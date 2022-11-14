@@ -5,6 +5,8 @@ a playground can Run code directly, providing a simple and fast, on-the-go code 
 This project was inspired by [vueuse-playground](https://github.com/wheatjs/vueuse-playground)
 、[runjs](https://runjs.app/) and [playcode](https://playcode.io/).
 
+there are something Learned from [codesandbox-client](https://github.com/codesandbox/codesandbox-client)
+
 The goal of the project: fast,、prototype development。So it has some caveats.
 
 > utools plugin 处于 [utools](https://github.com/ChandlerVer5/playcode/tree/utools) 分支
@@ -31,16 +33,27 @@ The goal of the project: fast,、prototype development。So it has some caveats.
 10. typescript 直接运行（运行 ts 体操测试）
 
 # TODO
-1. 依赖版本可选
-2. 启动窗口，可搜索进行创建快速环境
-3. js 直接运行
-4. worker 编译
-5. 依赖本地化，加快运行速度，（https://www.npmjs.com/package/babel-plugin-transform-commonjs），分析 npm 包，加载 esm 库
-6. 预览页面-loading
+- [ ] emmit monaco.editor 状态
+- [ ] 依赖版本可选
+- [ ] 启动窗口，可搜索进行创建快速环境
+- [ ] js 直接运行
+- [ ] worker 编译
+- [ ] 依赖本地化，加快运行速度，（https://www.npmjs.com/package/babel-plugin-transform-commonjs），分析 npm 包，加载 esm 库
+- [ ] 预览页面-loading
+- [ ] Preview 组建loading状态
+- [ ] 各个示例代码正常运行
+- [ ] 加速 esm 依赖/或者依赖本地npm化
+- [ ] console 美化
+- [ ] 各示例 ts 类型 提示
+- [ ] 
 
 
 # reference
 * https://segmentfault.com/a/1190000040746839
+
+* [preview.js](https://github.com/fwouts/previewjs)
+
+* [quokkajs 原理](https://quokkajs.com/docs/how-does-it-work.html#quokkas-execution-pipeline)
 
 * https://github.com/egoist/codepan
 

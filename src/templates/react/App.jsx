@@ -10,4 +10,4 @@ export function App(props) {
 }
 
 // Log to console
-console.log('Hello console')
+console.log('Hello App.jsx')

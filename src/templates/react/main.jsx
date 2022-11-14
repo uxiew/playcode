@@ -7,3 +7,5 @@ const root = createRoot(
 )
 
 root.render(<App />)
+
+console.log('Hello main.jsx')

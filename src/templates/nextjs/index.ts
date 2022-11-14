@@ -2,8 +2,8 @@ import { defineTemplate } from '..';
 import main from './main.ts?raw';
 
 export default defineTemplate({
-  homepage: 'https://nextjs.org',
   title: 'NextJS',
+  homepage: 'https://nextjs.org/learn',
   icon: 'nextjs',
   packages: [{}],
   files: [

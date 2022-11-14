@@ -1,3 +1,7 @@
+/**
+ * 视图初始化页面加载逻辑
+ */
+
 import templateHtml from '~/templates/template.html?raw';
 import templateJS from '~/templates/template.js?raw';
 import { orchestrator as store } from '~/orchestrator';
@@ -21,10 +25,9 @@ function _loadPkgMaps(script: string) {
 }
 
 /**
- * 动态获取 domId
+ * fix mount dom point for react/vue
  */
 function _prune(html: string) {
-  // fix mount point for react/vue
   return html.replace('APP_MOUNT_POINT', getMountID());
 }
 

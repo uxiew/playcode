@@ -1,5 +1,5 @@
 import { getProxy } from './preview';
-import { compileModules, compileFile, getMountID } from '../useCompiler';
+import { compileModules, compileFile, getMountID } from '~/logic/useCompiler';
 import { orchestrator as store, sourceType } from '~/orchestrator';
 import { Ref, ref } from 'vue';
 
@@ -38,7 +38,7 @@ export function updateNewFile(name: string) {
 }
 
 function update(name: string, content: string, type?: sourceType) {
-  console.log('----update----', contentType.value);
+  console.log('--😄--update----', name, contentType.value);
   return getProxy().eval(
     `const code = ${JSON.stringify(content)};
      __update__('${type || contentType.value}','${name}',code)`
@@ -48,6 +48,7 @@ function update(name: string, content: string, type?: sourceType) {
 // vue?svelte?ts?
 export async function updateFile(name: string) {
   const file = store.activeFile;
+  const preMountDOMId = getMountID();
 
   if (name.endsWith('.vue')) {
     contentType.value = contentType.value !== 'style' ? 'style' : 'script';
@@ -57,7 +58,7 @@ export async function updateFile(name: string) {
     getProxy().eval(
       `const root_elem = document.getElementById("${getMountID()}");
       if(root_elem){document.body.removeChild(root_elem);const el = document.createElement("div");
-      el.setAttribute('id', 'app');document.body.appendChild(el);}`
+      el.setAttribute('id', '${preMountDOMId}');document.body.appendChild(el);}`
     );
   }
 
