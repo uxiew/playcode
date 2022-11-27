@@ -25,13 +25,15 @@ import {
 
 import type { OrchestratorFile } from '~/orchestrator';
 
-// 编译对应js文件并加载
+/**
+ * @description 编译对应js文件并加载
+ * @returns 返回示例：["demo.ts:_:const __module__ = __modules__[\"demo.ts\"] =..."]
+ */
 export function compileModules() {
   let modules: Array<string> = [];
   for (const name in store.files)
     if (isEntryFile(name)) modules = processFile(store.files[name]);
 
-  // ["demo.ts:_:const __module__ = __modules__[\"demo.ts\"] =..."]
   return modules;
 }
 

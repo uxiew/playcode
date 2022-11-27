@@ -7,7 +7,7 @@ import {
   onShouldUpdateContent
 } from '~/orchestrator';
 import { settings } from '~/configs/settings';
-import { isNotUndefined } from '~/utils/tools';
+import { isImageFile, isNotUndefined } from '~/utils/tools';
 import { contentType } from '~/logic/usePreview';
 
 const script = ref();
@@ -16,6 +16,10 @@ const template = ref();
 
 const onlyHasScript = computed(
   () => !hasValue('style') && !hasValue('template')
+);
+
+const title = computed(() =>
+  isImageFile(store.activeFilename) ? 'Asset' : 'Script'
 );
 
 const hasValue = (type: sourceType) =>
@@ -41,14 +45,22 @@ const onContentChanged = (type: sourceType, content: string) => {
         <Splitpanes horizontal class="default-theme editors-height">
           <Pane v-if="hasValue('script')">
             <Container
-              title="Script"
+              :title="title"
               class="rounded-b-md"
               no-overflow
               no-rounding
             >
               <template #default>
+                <div v-if="isImageFile(store.activeFilename)">
+                  <img
+                    class="max-w-full m-auto mt-6"
+                    :src="script"
+                    :alt="store.activeFilename"
+                  />
+                </div>
                 <!-- if 指令会导致 editor 示例化多个 -->
                 <Editor
+                  v-else
                   language="typescript"
                   type="script"
                   :value="script"
@@ -69,7 +81,7 @@ const onContentChanged = (type: sourceType, content: string) => {
                 >
                   <template #default>
                     <Editor
-                      language="typescript"
+                      language="html"
                       type="template"
                       :value="template"
                       @change="
@@ -88,7 +100,7 @@ const onContentChanged = (type: sourceType, content: string) => {
                 >
                   <template #default>
                     <Editor
-                      language="css"
+                      language="scss"
                       type="style"
                       :value="style"
                       @change="(content) => onContentChanged('style', content)"

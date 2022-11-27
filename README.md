@@ -51,6 +51,8 @@ The goal of the project: fast,、prototype development。So it has some caveats.
 # reference
 * https://segmentfault.com/a/1190000040746839
 
+* [expo/snack](https://github.com/expo/snack)
+
 * [preview.js](https://github.com/fwouts/previewjs)
 
 * [quokkajs 原理](https://quokkajs.com/docs/how-does-it-work.html#quokkas-execution-pipeline)

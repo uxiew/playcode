@@ -5,7 +5,7 @@ export async function compileTemplateFile({
   template,
   compiled
 }: File) {
-  compiled.html = template;
+  compiled.html = template || '';
 
   // 分析当前 html style 和 script
   // if (code.startsWith('<!DOCTYPE')) {
@@ -13,7 +13,7 @@ export async function compileTemplateFile({
   // }
   // throw new Error('html file only supports body tag content!');
 
-  console.log(filename, template);
+  // console.log(filename, template);
   // const { render } = await import('https://jspm.dev/pug');
   // const htmlContent = render(template);
 }

@@ -28,11 +28,10 @@ const addNewFile = () => {
 
   const name = filename.value;
 
-  if (name in orchestrator.files) alert(name + ' File Already Exists!');
-  if (isTemplateFile(name)) {
-    alert('Only allow one index.html exists!');
-    return;
-  }
+  if (name in orchestrator.files)
+    !orchestrator.files[name].hidden && alert(name + ' File Already Exists!');
+
+  if (isTemplateFile(name)) alert('Only allow one index.html exists!');
 
   const ext = getExtension(name);
 
@@ -62,7 +61,7 @@ const addTab = () => {
   >
     <template v-for="file in orchestrator.files">
       <Tab
-        v-if="!file.closed"
+        v-if="!file.hidden"
         :key="file.filename"
         :active="file.filename === orchestrator.activeFilename"
         :name="file.filename"

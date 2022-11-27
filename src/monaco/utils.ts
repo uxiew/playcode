@@ -1,9 +1,36 @@
 import { setupMonaco } from '~/monaco';
 import type { editor as Editor } from 'monaco-editor';
 import { orchestrator as store, sourceType } from '~/orchestrator';
-import { nextTick } from 'vue';
 
 const editorStatus = new Map();
+
+function getUri(name: string, type: string) {
+  return new window.monaco.Uri().with({
+    path: store.type + '/' + name,
+    scheme: 'playcode',
+    fragment: type
+  });
+}
+
+function getLang(name: string, sourceType: sourceType) {
+  let type = name.split('.').slice(-1)[0];
+  const config: {
+    [key: string]: string;
+  } = {
+    script: 'typescript',
+    template: 'html',
+    style: 'scss',
+    js: 'javascript',
+    ts: 'typescript',
+    sass: 'scss',
+    jsx: 'javascript',
+    tsx: 'typescript',
+    rs: 'rust',
+    dart: 'dart'
+  };
+
+  return config[type] || config[sourceType];
+}
 
 export function saveModelStatus() {
   const preState = editorStatus.get('preState');
@@ -55,13 +82,6 @@ export function clearEditorState() {
   window.monaco?.editor.getModels().forEach((model) => model.dispose());
 }
 
-function getUri(name: string, type: string) {
-  return new window.monaco.Uri().with({
-    path: store.type + '/' + name,
-    scheme: 'playcode',
-    fragment: type
-  });
-}
 /**
  * 获取 相同类型的 editor, type 为空获取所有实例化的editors
  */
@@ -123,27 +143,9 @@ export async function createOrUpdateModel(
   let model = getModel(name, sourceType);
 
   if (!model) {
-    // TODO vue 文件的拆分 高亮
-
-    let type = '';
-    if (name.indexOf('.') !== -1) {
-      type = name.split('.').slice(-1)[0];
-    } else {
-      type = 'javascript';
-    }
-    const config: {
-      [key: string]: string;
-    } = {
-      js: 'javascript',
-      ts: 'typescript',
-      sass: 'scss',
-      jsx: 'javascript',
-      tsx: 'typescript'
-    };
-    // TODO language vue
     model = monaco.editor.createModel(
       code,
-      config[type] || type,
+      getLang(name, sourceType),
       getUri(name, sourceType)
     );
   }

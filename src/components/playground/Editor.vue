@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useMonaco } from '~/logic/useMonaco/';
-import { contentType } from '~/logic/usePreview';
 import { updatePreview } from '~/logic/usePreview/preview';
-import { orchestrator as store, sourceType } from '~/orchestrator';
-import { trimCode } from '~/utils/tools';
+import { sourceType } from '~/orchestrator';
+import Packer from '~/utils/packer';
 
 const emit = defineEmits<(e: 'change', content: string) => void>();
 const props = defineProps<{
@@ -20,13 +19,13 @@ const { onChange, getEditor } = useMonaco(target, {
   type: props.type
 });
 
-let preContent = trimCode(props.value);
+let preContent = Packer.compress(props.type, props.value);
 /**
  * 当内容更改时
  */
 onChange((content) => {
   emit('change', content);
-  content = trimCode(content);
+  content = Packer.compress(props.type, content);
   if (content !== preContent) {
     updatePreview();
   }

@@ -19,6 +19,6 @@
       "~/*": ["./src/*"]
     }
   },
-  "exclude": ["src/templates"],
+  "exclude": ["src/boilerplates"],
   "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts", "src/**/*.vue"]
 }

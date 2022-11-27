@@ -15,6 +15,9 @@ export type Package = {
   source?: PkgSource; // 来源
 };
 
+/**
+ * @description 如果未定义source，默认：esm.sh 服务
+ */
 export const getESMUrl = ({
   name,
   version = '',
@@ -25,9 +28,9 @@ export const getESMUrl = ({
   let server =
     source === 'unpkg'
       ? 'https://unpkg.com/'
-      : source === 'esm'
-      ? 'https://esm.sh/'
-      : 'https://cdn.jsdelivr.net/npm/';
+      : source === 'jsdelivr'
+      ? 'https://cdn.jsdelivr.net/npm/'
+      : 'https://esm.sh/';
   return server + `${name}${version}${path}`;
 };
 
@@ -65,7 +68,7 @@ export function pkgFetch(packages: Package[]): Package[] {
   for (const dep of packages) {
     deps.push({
       ...dep,
-      source: dep.source || 'unpkg',
+      source: dep.source || 'jsdelivr',
       description: dep.name,
       url: dep.url || getESMUrl(dep)
     });

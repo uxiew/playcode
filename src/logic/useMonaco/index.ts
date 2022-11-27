@@ -7,17 +7,16 @@ import lightTheme from 'theme-vitesse/themes/vitesse-light.json';
 import type { editor as Editor } from 'monaco-editor';
 
 import { editorPlugins } from '~/monaco/plugins/editor';
+import { monacoOptions } from '~/monaco/options';
 import { setupMonaco } from '~/monaco';
 import { isDark } from '~/logic/dark';
 import {
   createOrUpdateEditor,
-  createOrUpdateModel,
   getModel,
   restoreModelStatus,
   saveModelStatus
 } from '~/monaco/utils';
 import { orchestrator as store, sourceType } from '~/orchestrator';
-import { monacoOptions } from '~/monaco/options';
 
 /***
  * 组件的卸载 会导致该方法重复调用
@@ -73,18 +72,16 @@ export function useMonaco(
           ({ language }) => language === options.language
         );
 
-        if (editorStatus.get('listener')) {
-          // 取消上一次的监听
-          editorStatus.get('listener').dispose();
-        }
-
         const listener = editor.getModel()?.onDidChangeContent((ev) => {
           changeEventHook.trigger(editor.getValue());
           plugins.forEach(({ onContentChanged }) => onContentChanged(editor));
         });
 
-        editorStatus.set('listener', listener);
-
+        // if (editorStatus.get('listener')) {
+        //   // 取消上一次的监听
+        //   editorStatus.get('listener').dispose();
+        // }
+        // editorStatus.set('listener', listener);
         isSetup.value = true;
       },
       {

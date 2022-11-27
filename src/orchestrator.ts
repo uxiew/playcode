@@ -1,7 +1,7 @@
 import { reactive, watch } from 'vue';
 import { createEventHook } from '@vueuse/core';
 import lz from 'lz-string';
-import { templateList } from './templates';
+import { templateList } from './boilerplates';
 import {
   isEntryFile,
   isNotUndefined,
@@ -9,7 +9,7 @@ import {
   isTemplateFile
 } from './utils/tools';
 import { pkgFetch } from './utils/pkg';
-import templateHtml from '~/templates/template.html?raw';
+import templateHtml from '~/boilerplates/template.html?raw';
 import { setSettings, settings } from '~/configs/settings';
 import { state as previewState } from '~/logic/usePreview/preview';
 import { parserTemplate, compileFile } from '~/logic/useCompiler';
@@ -20,7 +20,7 @@ import {
 } from '~/monaco/utils';
 
 import type { Package } from './utils/pkg';
-import type { KeyList } from './templates';
+import type { KeyList } from './boilerplates';
 import type { Settings } from '~/configs/settings';
 
 export type sourceType = 'template' | 'script' | 'style';
@@ -48,6 +48,8 @@ export interface Orchestrator {
   runtimeErrors: (string | Error)[];
   configs: Settings; // 项目当前的一些配置
 
+  // 外部的cdn等
+  externals: Record<string, string>;
   // 当前文件
   readonly activeFile: OrchestratorFile;
   // 导入依赖图
@@ -61,8 +63,9 @@ export class OrchestratorFile {
   ext: string; // 扩展名
   // 标识新增
   newly?: string;
-  // 关闭该文件
-  closed: boolean = false;
+
+  // 该文件隐藏的
+  hidden: boolean = false;
 
   compiled = {
     js: '',
@@ -88,22 +91,22 @@ export class OrchestratorFile {
   get code() {
     if (this.filename.endsWith('.vue')) {
       return `<script setup>
-        ${this.script}
+        ${this.script || ''}
       </script>
       <template>
-        ${this.template}
+        ${this.template || ''}
       </template>
       <style scoped>
-        ${this.style}
+        ${this.style || ''}
       </style>`;
     }
     if (this.filename.endsWith('.svelte')) {
       return `<script>
-        ${this.script}
+        ${this.script || ''}
       </script>
-      ${this.template}
+      ${this.template || ''}
       <style>
-        ${this.style}
+        ${this.style || ''}
       </style>`;
     }
     if (isStyleFile(this.filename)) {
@@ -112,7 +115,7 @@ export class OrchestratorFile {
     if (isTemplateFile(this.filename)) {
       return this.template;
     }
-    return this.script;
+    return this.script || '';
   }
 }
 
@@ -127,6 +130,8 @@ export const orchestrator: Orchestrator = reactive({
   errors: [],
   runtimeErrors: [],
   configs: {},
+
+  externals: {},
 
   get activeFile() {
     // @ts-ignore
@@ -255,7 +260,10 @@ export async function addFile({
  * @param name  Name of file to remove
  */
 export function removeFile(name: string) {
-  const filesArr = Object.values(orchestrator.files);
+  const filesArr = Object.values(orchestrator.files).filter(
+    (file) => !file.hidden
+  );
+
   delete orchestrator.files[name];
 
   let nextFileIndex = 0;
@@ -263,12 +271,13 @@ export function removeFile(name: string) {
   for (let i = 0; i < filesArr.length; i++) {
     if (filesArr[i].filename === name) {
       nextFileIndex = i + 1 === filesArr.length ? i - 1 : i + 1;
+      filesArr[nextFileIndex].hidden && --nextFileIndex;
       break;
     }
   }
 
   // 激活文件
-  setActiveFile(filesArr[nextFileIndex].filename);
+  nextFileIndex >= 0 && setActiveFile(filesArr[nextFileIndex].filename);
 
   // 清除对应 model
   ['script', 'style', 'template'].forEach((type) =>
@@ -285,9 +294,10 @@ export function setActiveFile(name: string) {
 /**
  * Remove all files from the orchestrator
  */
-export function resetInit() {
+export function resetStore() {
   previewState.ready = false;
   orchestrator.files = {};
+  orchestrator.externals = {};
   clearEditorState();
 }
 
@@ -298,19 +308,19 @@ async function mockHtml(type: KeyList) {
   if (!files['index.html']) {
     await addFile({
       filename: 'index.html',
-      script: '',
+      script: undefined,
       ext: '.html',
       template: templateHtml,
-      style: ''
+      style: undefined
     });
-    orchestrator.files['index.html'].closed = true;
+    orchestrator.files['index.html'].hidden = true;
   }
   return Promise.resolve();
 }
 
 // ---初始化--
 export async function orchestratorInit(type: KeyList = 'javascript') {
-  resetInit();
+  resetStore();
   const { files, packages, configs } = templateList[type];
   orchestrator.type = type;
 
@@ -318,8 +328,6 @@ export async function orchestratorInit(type: KeyList = 'javascript') {
   setSettings(configs);
   // @ts-ignore
   orchestrator.packages = pkgFetch(packages);
-
-  let num = 0;
 
   for (const { name, active, value, extension } of files) {
     const result = parserTemplate(name, extension, value);

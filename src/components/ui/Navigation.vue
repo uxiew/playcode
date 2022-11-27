@@ -30,7 +30,7 @@ const createNewIdea = () => {
 </script>
 
 <template>
-  <div position="fixed right-0 top-0 bottom-0" p="x-2" h="60px" flex="~ row">
+  <div position="fixed left-0 top-0" p="x-2" flex="~ row">
     <Button icon text="base" @click="createNewIdea()">
       <carbon-idea />
     </Button>

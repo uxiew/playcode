@@ -2,6 +2,7 @@ import { getProxy } from './preview';
 import { compileModules, compileFile, getMountID } from '~/logic/useCompiler';
 import { orchestrator as store, sourceType } from '~/orchestrator';
 import { Ref, ref } from 'vue';
+import { settings } from '~/configs/settings';
 
 export let contentType: Ref<sourceType> = ref('script'); // 默认类型
 
@@ -15,11 +16,12 @@ export async function updatePkgs(pkg: string) {
  */
 export function updateNewFile(name: string) {
   const tag = contentType.value;
-  const iSrcdoc = getProxy().iframe.srcdoc;
+  let iSrcdoc = getProxy().iframe.srcdoc;
+
   switch (tag) {
     case 'script':
       {
-        iSrcdoc.replace(
+        iSrcdoc = iSrcdoc.replace(
           `}}</script>`,
           `}}</script>\n<script type="module" id=${name}></script>`
         );
@@ -27,12 +29,17 @@ export function updateNewFile(name: string) {
       break;
     case 'style':
       {
-        iSrcdoc.replace(`</style>`, `</style><style id=${name}></style>`);
+        iSrcdoc = iSrcdoc.replace(
+          `</style>`,
+          `</style><style id=${name}></style>`
+        );
       }
       break;
     default:
       break;
   }
+
+  getProxy().iframe.srcdoc = iSrcdoc;
 
   delete store.activeFile.newly;
 }
@@ -45,40 +52,52 @@ function update(name: string, content: string, type?: sourceType) {
   );
 }
 
-// vue?svelte?ts?
+/**
+ * @description 这里更新的逻辑如果细分就会比较复杂；
+ * TODO 简单的方法是更新所有js\css\html
+ */
 export async function updateFile(name: string) {
+  // 当前文件
   const file = store.activeFile;
   const preMountDOMId = getMountID();
 
   if (name.endsWith('.vue')) {
-    contentType.value = contentType.value !== 'style' ? 'style' : 'script';
+    contentType.value = contentType.value === 'style' ? 'style' : 'script';
   }
 
   if (contentType.value !== 'style') {
-    getProxy().eval(
-      `const root_elem = document.getElementById("${getMountID()}");
-      if(root_elem){document.body.removeChild(root_elem);const el = document.createElement("div");
-      el.setAttribute('id', '${preMountDOMId}');document.body.appendChild(el);}`
+    await getProxy().eval(
+      `const root_elem = document.getElementById("${
+        getMountID() || ''
+      }");console.log(root_elem)
+      if(root_elem){\ndocument.body.removeChild(root_elem);const el = document.createElement("div");
+      el.setAttribute('id', '${preMountDOMId}');document.body.appendChild(el);\n}`
     );
   }
 
-  function scriptUpdate() {
+  async function scriptUpdate() {
     const modules = compileModules();
-    modules.forEach((mod) => {
+    for (const mod of modules) {
       const [filename, js] = mod.split(':_:');
-      update(filename, js.replace(filename + ':_:', ''), 'script');
-    });
+      await update(filename, js.replace(filename + ':_:', ''), 'script');
+    }
   }
 
-  // when only vue'style be modified
+  // 重新编译文件！
   await compileFile(file, contentType.value);
+
   switch (contentType.value) {
     case 'style':
       update(name, file.compiled.css);
       break;
 
     case 'script':
-      scriptUpdate();
+      {
+        // 对于一些 css 框架，需要重新刷新css
+        if (settings.windicss && file.compiled.css)
+          update(name, file.compiled.css, 'style');
+        scriptUpdate();
+      }
       break;
     default:
       {

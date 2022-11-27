@@ -15,6 +15,8 @@ import {
   OrchestratorFile as File
 } from '../orchestrator';
 import { extensions } from '~/configs/settings';
+import { isStyleFile } from '~/utils/tools';
+import { getESMUrl } from '~/utils/pkg';
 
 const modulesKey = '__modules__';
 const exportKey = '__export__';
@@ -90,6 +92,7 @@ export function processFile(file: File, seen = new Set<File>()) {
     // import * as ok from 'foo' --> ok -> __import_foo__
     if (node.type === 'ImportDeclaration') {
       const source = node.source.value;
+
       if (source.startsWith('./')) {
         const importId = defineImport(node, node.source.value);
         for (const spec of node.specifiers) {
@@ -106,6 +109,27 @@ export function processFile(file: File, seen = new Set<File>()) {
           }
         }
         s.remove(node.start!, node.end!);
+      } else {
+        // 处理第三方依赖 TODO 移动到外部，专门处理第三方依赖
+        if (isStyleFile(source)) {
+          // https://cdn.jsdelivr.net/npm/element-plus@2.2.19/dist/index.css
+          let [depName, ...path] = source.split('/');
+          let cdnUrl = '';
+          for (const { name, version, source } of store.packages) {
+            if (depName === name) {
+              cdnUrl = getESMUrl({
+                name: depName,
+                version: version,
+                source: source,
+                path: '/' + path.join('/')
+              });
+              break;
+            }
+          }
+          store.externals[source] = cdnUrl;
+          s.remove(node.start!, node.end!);
+          console.log(store.externals, node, s);
+        }
       }
     }
   }

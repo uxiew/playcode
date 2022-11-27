@@ -21,7 +21,7 @@ export const monacoOptions: Editor.IStandaloneEditorConstructionOptions = {
   lineNumbers: 'on', // 是否启动行号
   lineNumbersMinChars: 4,
   mouseStyle: 'default',
-  quickSuggestions: false, // 智能提示
+  quickSuggestions: true, // 智能提示
   renderLineHighlight: 'line', // 选中行外部边框
   scrollbar: {
     arrowSize: 5,

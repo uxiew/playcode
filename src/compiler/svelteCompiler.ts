@@ -6,6 +6,4 @@ export async function compileTemplateFile({
   compiled
 }: File) {
   compiled.html = template;
-  // const { render } = await import('https://jspm.dev/pug');
-  // const htmlContent = render(template);
 }

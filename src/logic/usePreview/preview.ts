@@ -1,7 +1,6 @@
 import { reactive, ref, watch } from 'vue';
 import { orchestrator as store } from '~/orchestrator';
 import { ConsoleApi } from '../useConsole';
-import { prepareHTML } from './load';
 import { PreviewProxy } from './PreviewProxy';
 import { updateFile, updateNewFile } from './update';
 
@@ -46,6 +45,8 @@ export function initProxy(sandbox: HTMLIFrameElement) {
           ''
         )}.\nTip: add an "import-map.json" file to specify import paths for dependencies.`;
       } else {
+        ConsoleApi.log(event.value);
+        console.error(event);
         runtimeError.value = event.value;
       }
     },
@@ -57,8 +58,9 @@ export function initProxy(sandbox: HTMLIFrameElement) {
     },
     on_console: ({ level, args }: any) => {
       // @ts-ignore
-      // ConsoleApi[level](...args);
+      ConsoleApi[level](...args);
       console.log(level, args);
+
       if (level === 'error') {
         if (args[0] instanceof Error) runtimeError.value = args[0].message;
         else runtimeError.value = args[0];

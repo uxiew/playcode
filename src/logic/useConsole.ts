@@ -162,7 +162,7 @@ const data = reactive({
 
 Object.assign(window, { data });
 
-const ConsoleApi = new DataAPI(false, 6);
+const ConsoleApi = new DataAPI(false, 0);
 
 // Object.assign(window, {
 //   ConsoleApi,

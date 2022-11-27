@@ -2,10 +2,26 @@
  * 视图初始化页面加载逻辑
  */
 
-import templateHtml from '~/templates/template.html?raw';
-import templateJS from '~/templates/template.js?raw';
+import templateHtml from '~/boilerplates/template.html?raw';
+import templateJS from '~/boilerplates/template.js?raw';
 import { orchestrator as store } from '~/orchestrator';
 import { compileModules, getMountID } from '../useCompiler';
+import { isStyleFile } from '~/utils/tools';
+
+// <link href="https:/ss.com/css" rel="stylesheet">
+
+function addCDNs(html: string) {
+  const cdns = store.externals;
+  for (let name in cdns) {
+    if (isStyleFile(name))
+      html = html.replace(
+        '</head>',
+        `<link href="${cdns[name]}" rel="stylesheet" />\n</head>`
+      );
+  }
+
+  return html;
+}
 
 function _loadPkgMaps(script: string) {
   let importMap: Record<string, any> = {};
@@ -28,10 +44,10 @@ function _loadPkgMaps(script: string) {
  * fix mount dom point for react/vue
  */
 function _prune(html: string) {
-  return html.replace('APP_MOUNT_POINT', getMountID());
+  return addCDNs(html).replace('APP_MOUNT_POINT', getMountID());
 }
 
-export function normalizeHTML(html: string, template?: string) {
+export function normalizeHTML(html: string) {
   if (!/<html |<!DOC/.test(html)) {
     html = templateHtml.replace(/<div id="APP_MOUNT_POINT"><\/div>/, html);
   }
